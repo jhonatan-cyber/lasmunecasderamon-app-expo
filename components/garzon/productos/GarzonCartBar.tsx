@@ -22,6 +22,7 @@ const METODOS_PAGO_PEDIDO: MetodoPagoPedido[] = [
 ];
 
 interface GarzonCartBarProps {
+  itemCount: number;
   tipEnabled: boolean;
   setTipEnabled: (enabled: boolean) => void;
   metodoPago: MetodoPagoPedido;
@@ -37,6 +38,7 @@ interface GarzonCartBarProps {
   submitOrder: () => void;
   /** Abre la vista/modal con el detalle del pedido. */
   onViewCart: () => void;
+  onBarHeightChange?: (height: number) => void;
 
   insets: { bottom: number };
   accentColor: string;
@@ -47,6 +49,7 @@ interface GarzonCartBarProps {
 }
 
 export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
+  itemCount,
   tipEnabled,
   setTipEnabled,
   metodoPago,
@@ -59,6 +62,7 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
   submitting,
   submitOrder,
   onViewCart,
+  onBarHeightChange,
   insets,
   accentColor,
   borderColor,
@@ -67,45 +71,34 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
   textSecondary,
 }) => {
   const { accentOnSurface, accentColor: themeAccent } = useAccentColor();
+  const [controlsExpanded, setControlsExpanded] = React.useState(false);
+  const tipSummary = tipEnabled ? `Propina ${tipPercentage}%` : "Propina inactiva";
+  const receiptSummary = metodoPago === "transferencia"
+    ? baucherFoto
+      ? " · Comprobante adjunto"
+      : " · Falta comprobante"
+    : "";
+  const optionsLabel = `Editar pago y propina: ${tipSummary} · Pago ${metodoPago}${receiptSummary}`;
 
   const controls = (
     <>
-      <View style={styles.cartTopRow}>
-        <View style={styles.tipControl}>
-          <Text style={[styles.tipText, { color: textSecondary }]}>
-            Propina ({tipPercentage}%)
-          </Text>
-          <Pressable
-            onPress={() => setTipEnabled(!tipEnabled)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: tipEnabled }}
-          >
-            <Text style={{ color: accentOnSurface, fontFamily: FontFamily.semibold }}>
-              {tipEnabled ? "Activa" : "Inactiva"} · $
-              {tipAmount.toLocaleString()}
-            </Text>
-          </Pressable>
-        </View>
-        {tipEnabled && (
-          <Text style={[styles.tipAmount, { color: accentOnSurface }]}>
-            +${tipAmount.toLocaleString()}
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.paymentRow}>
-        <Text style={[styles.paymentLabel, { color: textSecondary }]}>Pago</Text>
-        <View style={styles.paymentOptions}>
-          <PaymentMethodSelect
-            showLabel={false}
-            variant="compact"
-            methods={METODOS_PAGO_PEDIDO}
-            selectedMethod={metodoPago}
-            onSelect={(metodo) => setMetodoPago(metodo as MetodoPagoPedido)}
-            getAccessibilityLabel={(metodo) => `Pago ${metodo}`}
-          />
-        </View>
-      </View>
+      <Pressable
+        onPress={() => setControlsExpanded((expanded) => !expanded)}
+        style={styles.optionsToggle}
+        accessibilityRole="button"
+        accessibilityLabel={optionsLabel}
+        accessibilityHint={controlsExpanded ? "Oculta las opciones de pago y propina" : "Muestra las opciones de pago y propina"}
+        accessibilityState={{ expanded: controlsExpanded }}
+      >
+        <Text style={[styles.optionsSummary, { color: textSecondary }]}>
+          {tipSummary} · Pago {metodoPago}{receiptSummary}
+        </Text>
+        <Ionicons
+          name={controlsExpanded ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={textSecondary}
+        />
+      </Pressable>
 
       {metodoPago === "transferencia" && (
         <Pressable
@@ -116,6 +109,7 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
               ? "Repetir foto del baucher"
               : "Sacar foto del baucher (obligatoria)"
           }
+          accessibilityHint={baucherFoto ? "Abre la cámara para reemplazar el comprobante" : "Abre la cámara para adjuntar el comprobante obligatorio"}
           style={[
             styles.baucherRow,
             {
@@ -136,23 +130,60 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
             ]}
           >
             {baucherFoto
-              ? "Baucher adjunto · tocar para repetir"
-              : "Sacar foto del baucher (obligatoria)"}
+              ? "Comprobante adjunto · tocar para reemplazar"
+              : "Adjuntar comprobante obligatorio"}
           </Text>
         </Pressable>
+      )}
+
+      {controlsExpanded && (
+        <View style={styles.expandedControls}>
+          <View style={styles.cartTopRow}>
+            <View style={styles.tipControl}>
+              <Text style={[styles.tipText, { color: textSecondary }]}>Propina ({tipPercentage}%)</Text>
+              <Pressable
+                onPress={() => setTipEnabled(!tipEnabled)}
+                accessibilityRole="button"
+                accessibilityLabel={tipEnabled ? "Desactivar propina" : "Activar propina"}
+                accessibilityState={{ selected: tipEnabled }}
+              >
+                <Text style={{ color: accentOnSurface, fontFamily: FontFamily.semibold }}>
+                  {tipEnabled ? "Activa" : "Inactiva"} · ${tipAmount.toLocaleString()}
+                </Text>
+              </Pressable>
+            </View>
+            {tipEnabled && (
+              <Text style={[styles.tipAmount, { color: accentOnSurface }]}>+${tipAmount.toLocaleString()}</Text>
+            )}
+          </View>
+
+          <View style={styles.paymentRow}>
+            <Text style={[styles.paymentLabel, { color: textSecondary }]}>Pago</Text>
+            <View style={styles.paymentOptions}>
+              <PaymentMethodSelect
+                showLabel={false}
+                variant="compact"
+                methods={METODOS_PAGO_PEDIDO}
+                selectedMethod={metodoPago}
+                onSelect={(metodo) => setMetodoPago(metodo as MetodoPagoPedido)}
+                getAccessibilityLabel={(metodo) => `Pago ${metodo}`}
+              />
+            </View>
+          </View>
+        </View>
       )}
     </>
   );
 
   return (
     <CheckoutBarShell
-      itemCount={0}
-      showItemBadge={false}
-      leftLabel="Total Pedido"
+      itemCount={itemCount}
+      totalLabel="producto"
       total={`$${cartTotal.toLocaleString()}`}
       onViewDetails={onViewCart}
       viewDetailsLabel="Ver detalle del pedido"
       controls={controls}
+      onLayout={(event) => onBarHeightChange?.(event.nativeEvent.layout.height)}
       bottomInset={16 + insets.bottom}
       cardBg={cardBg}
       borderColor={borderColor}
@@ -180,11 +211,20 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
   },
+  optionsToggle: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  optionsSummary: { flex: 1, fontSize: 12, fontFamily: FontFamily.semibold },
+  expandedControls: { paddingBottom: 4 },
   cartTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   tipControl: { flexDirection: "row", alignItems: "center", gap: 10 },
   tipText: { fontSize: 13, fontFamily: FontFamily.semibold },
@@ -194,7 +234,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   paymentLabel: { fontSize: 12, fontFamily: FontFamily.semibold },
   paymentOptions: {
@@ -205,6 +245,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   baucherRow: {
+    minHeight: 44,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -212,7 +253,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   baucherThumb: {
     width: 36,

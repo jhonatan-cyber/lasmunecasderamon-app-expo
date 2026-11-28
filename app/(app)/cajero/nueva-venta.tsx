@@ -20,6 +20,7 @@ import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
+import { ContextualHelp } from "@/components/ui/ContextualHelp";
 import { ShotMixerSelector } from "@/components/shared/ShotMixerSelector";
 import { CartList } from "@/components/cajero/forms/CartList";
 import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
@@ -252,6 +253,24 @@ export default function NuevaVentaScreen() {
         }
       >
         {cajaAbierta === false && <CajaClosedBanner />}
+
+        <ContextualHelp
+          title="la nueva venta"
+          steps={[
+            {
+              title: "Agrega productos",
+              description: "Elige una categoría o busca el producto; selecciona su presentación y cantidad para añadirlo al carrito.",
+            },
+            {
+              title: "Completa los detalles",
+              description: "Asigna cliente, habitación o anfitriona cuando corresponda y revisa los datos de la venta.",
+            },
+            {
+              title: "Revisa y cobra",
+              description: "Confirma el carrito y el método de pago. Si es transferencia, adjunta el comprobante antes de registrar la venta.",
+            },
+          ]}
+        />
 
         <NuevaVentaSearch
           searchProducto={searchProducto}

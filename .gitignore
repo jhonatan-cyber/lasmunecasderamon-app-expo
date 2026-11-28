@@ -60,3 +60,5 @@ propfiles.txt
 
 # Artefactos locales de EAS Build
 eas-build*.log
+# Local AI runtime state
+.atl/

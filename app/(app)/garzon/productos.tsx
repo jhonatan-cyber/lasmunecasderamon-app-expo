@@ -4,10 +4,10 @@ import { FontFamily } from '@/constants/fonts';
 import { useCartStore } from "@/store/cartStore";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAccentColor } from "@/hooks/useAccentColor";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { useStableCallback } from "@/hooks/useStableCallback";
-import type { Product } from "@/types/cart";
+import { getHostessLimit } from "@/hooks/utils/cuentaUtils";
 import {
   ActivityIndicator,
   Pressable,
@@ -22,16 +22,24 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { EmployeeListError } from "@/components/shared/EmployeeListError";
 import { useGarzonProductos } from "@/hooks/useGarzonProductos";
+import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
+import {
+  groupProductsByPresentation,
+  type ProductPresentationGroup,
+} from "@/utils/productPresentationGroups";
+import { groupProductPresentationRows } from "@/utils/productPresentationRows";
 import {
   GarzonCartBar,
   GarzonProductosModales,
 } from "@/components/garzon/productos";
 import { GarzonOfflineBanner } from "@/components/garzon/GarzonOfflineBanner";
+import { GarzonProductConfigModal } from "@/components/garzon/productos/GarzonProductConfigModal";
 
 type ListItem =
-  | { type: 'header'; key: string; categoria: string }
-  | { type: 'product'; key: string; data: Product };
+  { type: 'products'; key: string; data: ProductPresentationGroup[] };
 
 export default function ProductosScreen() {
   const draftCart = useCartStore((state) => state.cart);
@@ -41,7 +49,19 @@ export default function ProductosScreen() {
   const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, accentOnSurface } =
     useAccentColor();
   const router = useRouter();
+  const routeParams = useLocalSearchParams<{
+    configureProductId?: string | string[];
+    configureType?: string | string[];
+    search?: string | string[];
+  }>();
   const insets = useSafeAreaInsets();
+  const { isTablet, isLandscape } = useResponsiveMetrics();
+  const columnas = isTablet || isLandscape ? 3 : 2;
+  const initialSearch = Array.isArray(routeParams.search)
+    ? routeParams.search[0]
+    : routeParams.search;
+  const [searchText, setSearchText] = React.useState(initialSearch || '');
+  const [cartBarHeight, setCartBarHeight] = React.useState(0);
 
   const {
     categoryName,
@@ -59,6 +79,7 @@ export default function ProductosScreen() {
     takeBaucherPhoto,
     loading,
     refreshing,
+    error,
     submitting,
     fromCache,
     clientModalVisible,
@@ -70,8 +91,6 @@ export default function ProductosScreen() {
     cart,
     addToCart,
     removeFromCart,
-    updateItemHostesses,
-    updateItemRoom,
     tipEnabled,
     setTipEnabled,
     clearCart,
@@ -79,63 +98,140 @@ export default function ProductosScreen() {
     cartTotal,
     propinaPct,
     onRefresh,
-    getMaxHostesses,
     submitOrder,
   } = useGarzonProductos();
-
-  const cartItemsByProductId = React.useMemo(
-    () =>
-      new Map(cart.map((cartItem) => [String(cartItem.product.id), cartItem])),
-    [cart],
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const selectedClient = clients.find(
+    (client) => String(client.id_cliente || client.id) === selectedClientId,
   );
+  const selectedClientName = selectedClient
+    ? `${selectedClient.nombre || selectedClient.name || ""} ${selectedClient.apellido || selectedClient.lastName || ""}`.trim() || "Cliente sin nombre"
+    : null;
+
+  const configureProductId = Array.isArray(routeParams.configureProductId)
+    ? routeParams.configureProductId[0]
+    : routeParams.configureProductId;
+  const configureType = Array.isArray(routeParams.configureType)
+    ? routeParams.configureType[0]
+    : routeParams.configureType;
+  const requestedConfigItem: {
+    productId: string;
+    type: "hostess" | "room";
+  } | null = configureProductId
+    ? {
+        productId: configureProductId,
+        type: configureType === "room" ? "room" : "hostess",
+      }
+    : null;
+
+  const requestedCartItem = requestedConfigItem
+    ? cart.find((item) => item.product.id === requestedConfigItem.productId)
+    : undefined;
+  const requestedMaxHostesses = requestedCartItem
+    ? requestedCartItem.product.tipo_venta === "shot"
+      ? requestedCartItem.product.shot_anfitriona
+        ? requestedCartItem.quantity
+        : 0
+      : getHostessLimit(requestedCartItem.product, requestedCartItem.quantity)
+    : 0;
+
+  const productGroups = React.useMemo(
+    () => groupProductsByPresentation(products),
+    [products],
+  );
+  const filteredProductGroups = React.useMemo(() => {
+    const search = searchText.trim().toLocaleLowerCase();
+    if (!search) return productGroups;
+
+    return productGroups.filter((group) =>
+      group.variants.some((product) =>
+        [product.name, product.producto_nombre, product.presentacion_nombre, product.categoria]
+          .some((value) => value?.toLocaleLowerCase().includes(search)),
+      ),
+    );
+  }, [productGroups, searchText]);
 
   // Agrupa los productos por categoría manteniendo el orden de aparición.
-  // Solo incluye categorías que tengan al menos un producto (el hook ya filtra stock > 0).
   const listItems = React.useMemo<ListItem[]>(() => {
-    const groups = new Map<string, Product[]>();
-    for (const p of products) {
-      const cat = p.categoria || 'Sin categoría';
+    const groups = new Map<string, ProductPresentationGroup[]>();
+    for (const productGroup of filteredProductGroups) {
+      const cat = productGroup.variants[0].categoria || 'Sin categoría';
       if (!groups.has(cat)) groups.set(cat, []);
-      groups.get(cat)!.push(p);
+      groups.get(cat)!.push(productGroup);
     }
     const result: ListItem[] = [];
-    for (const [cat, prods] of groups) {
-      result.push({ type: 'header', key: `header:${cat}`, categoria: cat });
-      for (const p of prods) {
-        result.push({ type: 'product', key: String(p.id), data: p });
-      }
+    for (const [cat, productGroups] of groups) {
+      const rows = groupProductPresentationRows(productGroups, columnas);
+      rows.forEach((row, index) => {
+        result.push({
+          type: 'products',
+          key: `products:${cat}:${index}`,
+          data: row,
+        });
+      });
     }
     return result;
-  }, [products]);
+  }, [filteredProductGroups, columnas]);
   const handleProductConfig = useStableCallback(
     (productId: string, type: "hostess" | "room") => {
       setActiveConfigItem({ productId, type });
     },
   );
 
-  const renderItem = useStableCallback(({ item }: { item: ListItem }) => {
-    if (item.type === 'header') {
-      return (
-        <View style={styles.categoryHeader}>
-          <Text style={[styles.categoryHeaderText, { color: textSecondary }]}>
-            {item.categoria}
-          </Text>
-        </View>
-      );
-    }
-    const cartItem = cartItemsByProductId.get(String(item.data.id));
+  const renderItem = React.useCallback(({ item }: { item: ListItem }) => {
     return (
-      <ProductCard
-        product={item.data}
-        cartItem={cartItem}
-        onAdd={addToCart}
-        onRemove={removeFromCart}
-        onConfigPress={handleProductConfig}
-        anfitrionas={anfitrionas}
-        rooms={rooms}
-      />
+      <View style={styles.productRow}>
+        {item.data.map((productGroup) => {
+          const hasMultipleSaleVariants = productGroup.variants.length > 1;
+          const configTarget =
+            activeConfigItem &&
+            productGroup.variants.some(
+              (variant) => variant.id === activeConfigItem.productId,
+            )
+              ? activeConfigItem
+              : null;
+          return (
+            <View
+              key={productGroup.key}
+              style={
+                hasMultipleSaleVariants
+                  ? styles.fullWidthProductCell
+                  : styles.productCell
+              }
+            >
+              <ProductCard
+                product={productGroup.variants[0]}
+                saleVariants={productGroup.variants}
+                layout={hasMultipleSaleVariants ? "list" : "grid"}
+                onAdd={addToCart}
+                onRemove={removeFromCart}
+                onConfigPress={handleProductConfig}
+                anfitrionas={anfitrionas}
+                rooms={rooms}
+                activeConfigItem={configTarget}
+                onConfigClose={() => setActiveConfigItem(null)}
+                bottomInset={insets.bottom}
+              />
+            </View>
+          );
+        })}
+        {item.data.length < columnas && item.data[0].variants.length === 1 &&
+          Array.from({ length: columnas - item.data.length }, (_, index) => (
+            <View key={`empty:${index}`} style={styles.productCell} />
+          ))}
+      </View>
     );
-  });
+  }, [
+    activeConfigItem,
+    addToCart,
+    anfitrionas,
+    columnas,
+    handleProductConfig,
+    insets.bottom,
+    removeFromCart,
+    rooms,
+    setActiveConfigItem,
+  ]);
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
@@ -169,76 +265,122 @@ export default function ProductosScreen() {
 
       <GarzonOfflineBanner />
 
-      {loading && products.length === 0 ? (
+      <View style={styles.searchContainer}>
+        <Pressable
+          onPress={() => setClientModalVisible(true)}
+          style={[styles.clientSelector, { backgroundColor: cardBg, borderColor }]}
+          accessibilityRole="button"
+          accessibilityLabel={
+            selectedClientName
+              ? `Cambiar cliente asociado: ${selectedClientName}`
+              : "Asociar cliente al pedido (opcional)"
+          }
+          accessibilityHint={
+            selectedClientName
+              ? "Abre el selector para cambiar o quitar el cliente del pedido"
+              : "El cliente es opcional y se asociará a este pedido"
+          }
+        >
+          <Ionicons
+            name={selectedClientName ? "person-circle-outline" : "person-add-outline"}
+            size={22}
+            color={accentOnSurface}
+          />
+          <View style={styles.clientSelectorText}>
+            <Text style={{ color: textSecondary, fontSize: 12, fontFamily: FontFamily.semibold }}>
+              Cliente del pedido (opcional)
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}
+            >
+              {selectedClientName || "Sin cliente asociado"}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={textSecondary} />
+        </Pressable>
+        <SearchBar
+          compact
+          placeholder="Buscar producto..."
+          value={searchText}
+          onChangeText={setSearchText}
+          onClear={() => setSearchText('')}
+          accessibilityLabel="Buscar productos"
+          autoCapitalize="none"
+        />
+      </View>
+
+      {(loading || refreshing) && products.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={accentOnSurface} />
         </View>
+      ) : error && products.length === 0 ? (
+        <EmployeeListError message={error} onRetry={onRefresh} />
       ) : (
-        <VirtualizedList
-          data={listItems}
-          extraData={cart}
-          keyExtractor={(item: ListItem) => item.key}
-          renderItem={renderItem}
-          estimatedItemSize={150}
-          getItemType={(item: ListItem) => item.type}
-          contentContainerStyle={[
-            styles.listContent,
-            { paddingBottom: cart.length > 0 ? 230 : 40 },
-          ]}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={accentColor}
-            />
-          }
-          ListHeaderComponent={
-            cart.length > 0 ? (
-              <Pressable
-                onPress={() => {
-                  useCartStore.getState().splitShorts();
-                  router.push('/(app)/garzon/pedido-detalle');
-                }}
-                style={{
-                  padding: 16,
-                  marginBottom: 12,
-                  borderRadius: 16,
-                  backgroundColor: cardBg,
-                  borderWidth: 1,
-                  borderColor,
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Ver detalle del pedido"
-              >
-                {(() => {
-                  const totalUnidades = cart.reduce((sum, item) => sum + item.quantity, 0);
-                  const productoTxt = totalUnidades === 1 ? 'producto' : 'productos';
-                  return (
-                    <Text style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}>
-                      {totalUnidades} {productoTxt} en el pedido
-                    </Text>
-                  );
-                })()}
-              </Pressable>
-            ) : null
-          }
-          ListEmptyComponent={
-            <EmptyState
-              icon="fast-food-outline"
-              title="No hay productos disponibles en esta categoría"
-            />
-          }
-        />
+        <>
+          {error ? <EmployeeListError message={error} onRetry={onRefresh} /> : null}
+          <VirtualizedList
+            data={listItems}
+            extraData={[cart, activeConfigItem]}
+            keyExtractor={(item: ListItem) => item.key}
+            renderItem={renderItem}
+            estimatedItemSize={150}
+            getItemType={(item: ListItem) => item.type}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingBottom: cart.length > 0 ? Math.max(cartBarHeight, 160) + 16 : 40 },
+            ]}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={accentColor}
+              />
+            }
+            ListHeaderComponent={
+              cart.length > 0 ? (
+                <Pressable
+                  onPress={() => {
+                    useCartStore.getState().splitShorts();
+                    router.push('/(app)/garzon/pedido-detalle');
+                  }}
+                  style={{
+                    padding: 16,
+                    marginBottom: 12,
+                    borderRadius: 16,
+                    backgroundColor: cardBg,
+                    borderWidth: 1,
+                    borderColor,
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ver detalle del pedido"
+                >
+                  <Text style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}>
+                    {itemCount} {itemCount === 1 ? 'producto' : 'productos'} en el pedido
+                  </Text>
+                </Pressable>
+              ) : null
+            }
+            ListEmptyComponent={
+              <EmptyState
+                icon="fast-food-outline"
+                title={searchText.trim() ? 'No se encontraron productos' : 'No hay productos disponibles en esta categoría'}
+              />
+            }
+          />
+        </>
       )}
 
       {cart.length > 0 && (
         <GarzonCartBar
+          itemCount={itemCount}
           tipEnabled={tipEnabled}
           setTipEnabled={setTipEnabled}
           metodoPago={metodoPago}
           setMetodoPago={setMetodoPago}
           baucherFoto={baucherFoto}
           onTakeBaucherPhoto={() => void takeBaucherPhoto()}
+          onBarHeightChange={(height) => setCartBarHeight(height)}
           tipAmount={tipAmount}
           tipPercentage={propinaPct}
           cartTotal={cartTotal}
@@ -266,22 +408,25 @@ export default function ProductosScreen() {
         clearCartAlertVisible={clearCartAlertVisible}
         setClearCartAlertVisible={setClearCartAlertVisible}
         clearCart={clearCart}
-        activeConfigItem={activeConfigItem}
         setActiveConfigItem={setActiveConfigItem}
-        cart={cart}
-        anfitrionas={anfitrionas}
-        rooms={rooms}
-        products={products}
-        getMaxHostesses={getMaxHostesses}
-        updateItemHostesses={updateItemHostesses}
-        updateItemRoom={updateItemRoom}
-        insets={insets}
-        accentColor={accentColor}
-        accentOnSurface={accentOnSurface}
-        borderColor={borderColor}
-        cardBg={cardBg}
-        textPrimary={textPrimary}
       />
+      {requestedConfigItem && requestedCartItem ? (
+        <GarzonProductConfigModal
+          visible={!loading}
+          productId={requestedConfigItem.productId}
+          type={requestedConfigItem.type}
+          hostesses={anfitrionas}
+          rooms={rooms}
+          maxHostesses={requestedMaxHostesses}
+          bottomInset={insets.bottom}
+          onClose={() =>
+            router.setParams({
+              configureProductId: undefined,
+              configureType: undefined,
+            })
+          }
+        />
+      ) : null}
       <PremiumAlert
         visible={baucherPromptVisible}
         title="Foto del baucher"
@@ -303,17 +448,21 @@ export default function ProductosScreen() {
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   listContent: { ...contentColumn, padding: 16 },
-  categoryHeader: {
-    paddingTop: 20,
-    paddingBottom: 6,
-    paddingHorizontal: 4,
+  searchContainer: { paddingHorizontal: 16, paddingTop: 8 },
+  clientSelector: {
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderRadius: 14,
   },
-  categoryHeaderText: {
-    fontFamily: FontFamily.extrabold,
-    fontSize: 13,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
+  clientSelectorText: { flex: 1, minWidth: 0, gap: 2 },
+  productRow: { flexDirection: 'row', gap: 12 },
+  productCell: { flex: 1, minWidth: 0 },
+  fullWidthProductCell: { width: '100%', minWidth: 0 },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   clearBtn: {
     width: 38,

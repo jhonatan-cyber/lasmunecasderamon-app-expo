@@ -14,6 +14,7 @@ import {
     View
 } from 'react-native';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { ContextualHelp } from '@/components/ui/ContextualHelp';
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { OfflineBlockedNotice } from '@/components/offline/OfflineBlockedNotice';
 import { OFFLINE_BLOCKED_ACTIONS } from '@/utils/offlineGuard';
@@ -154,6 +155,24 @@ export default function CajaScreen() {
                     {!esAdmin && isOffline && (
                         <OfflineBlockedNotice message={OFFLINE_BLOCKED_ACTIONS.caja.message} />
                     )}
+
+                    <ContextualHelp
+                        title="la caja"
+                        steps={[
+                            {
+                                title: 'Abre el turno',
+                                description: 'Selecciona Abrir Caja e indica el efectivo inicial para comenzar a registrar movimientos.',
+                            },
+                            {
+                                title: 'Revisa los movimientos',
+                                description: 'Consulta el origen y la forma de pago del dinero. Para un retiro, indica el monto y el motivo.',
+                            },
+                            {
+                                title: 'Solicita el cierre',
+                                description: 'Verifica el monto de cierre previsto y envía la solicitud; la caja permanece abierta hasta que el administrador la autorice.',
+                            },
+                        ]}
+                    />
 
                     {cajaAbierta && stats?.cierre_pendiente && (
                         <View

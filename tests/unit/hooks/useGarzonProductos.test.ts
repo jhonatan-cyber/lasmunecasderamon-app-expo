@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setMirrorForTests } from "@/services/mirror";
 import { createMirrorRepository } from "@/services/mirror/repository";
 import { ensureMirrorSchema } from "@/services/mirror/schema";
+import { apiClientSafe } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { createNodeSqliteMirrorDriver } from "../../helpers/nodeSqliteMirrorDriver";
@@ -64,6 +65,9 @@ describe("useGarzonProductos · pedido sin red", () => {
   let driver: ReturnType<typeof createNodeSqliteMirrorDriver>;
 
   beforeEach(async () => {
+    vi.mocked(apiClientSafe).mockReset();
+    vi.mocked(apiClientSafe).mockResolvedValue({ success: true, data: [] } as never);
+
     const { useLocalSearchParams } = await import("expo-router");
     vi.mocked(useLocalSearchParams).mockReturnValue({
       categoryId: CATEGORY_ID,
@@ -154,6 +158,50 @@ describe("useGarzonProductos · pedido sin red", () => {
       "Corona - Botella sin anfitriona",
     ]);
     expect(result.current.fromCache).toBe(true);
+  });
+
+  it("expone el error del catálogo y permite resolverlo al reintentar", async () => {
+    let fallaCatalogo = true;
+    vi.mocked(apiClientSafe).mockImplementation((endpoint: string) => {
+      if (endpoint.startsWith("/products?") && fallaCatalogo) {
+        return Promise.reject(new Error("No se pudo conectar con el catálogo"));
+      }
+      return Promise.resolve({ success: true, data: [] } as never);
+    });
+    const mirror = createMirrorRepository(driver, { isOffline: () => false });
+    mirror.clear();
+    setMirrorForTests(mirror);
+
+    const { result } = renderHook(() => useGarzonProductos());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.products).toEqual([]);
+    expect(result.current.error).toBe("No se pudo conectar con el catálogo");
+
+    fallaCatalogo = false;
+    await act(async () => {
+      result.current.onRefresh();
+    });
+    await waitFor(() => {
+      expect(
+        vi.mocked(apiClientSafe).mock.calls.filter(([endpoint]) =>
+          endpoint.startsWith("/products?"),
+        ),
+      ).toHaveLength(2);
+      expect(result.current.refreshing).toBe(false);
+      expect(result.current.error).toBe("");
+    });
+    expect(result.current.products).toEqual([]);
+  });
+
+  it("mantiene el estado vacío cuando el catálogo carga correctamente sin productos", async () => {
+    setMirrorForTests(createMirrorRepository(driver, { isOffline: () => false }));
+
+    const { result } = renderHook(() => useGarzonProductos());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.products).toEqual([]);
+    expect(result.current.error).toBe("");
   });
 
   it("conserva el formato de botella sin anfitriona al enviar el pedido", async () => {

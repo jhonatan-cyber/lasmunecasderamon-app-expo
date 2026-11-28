@@ -14,6 +14,7 @@ import {
   acompanamientoDe,
   acompanamientosParaLinea,
   bebidaDe,
+  calcularRecargoAcompanamientos,
   calcularReparto,
   categoriaFueraDeCover,
   claveDe,
@@ -146,18 +147,18 @@ export function useEntregaCovers({
     [entradaIndividualId, filasGrupo, tipoEntrega],
   );
   const totalEntradas = filas.reduce((total, fila) => total + (Number(fila.monto_entrada) || 0), 0);
-  const adicional = Math.max(0, Math.floor(Number(montoAdicional) || 0));
+  const adicionalManual = Math.max(0, Math.floor(Number(montoAdicional) || 0));
   // El grupo comparte el presupuesto de sus entradas; individualmente aplica
   // el tope configurado más el adicional.
-  const presupuesto = totalEntradas + adicional;
+  const presupuestoProductos = totalEntradas + adicionalManual;
   const topeCover = Number.isFinite(tope) ? Math.max(0, tope) : 0;
   const precioMaximo = Math.min(
-    presupuesto,
-    filas.length === 1 ? topeCover + adicional : presupuesto,
+    presupuestoProductos,
+    filas.length === 1 ? topeCover + adicionalManual : presupuestoProductos,
   );
   const limites = useMemo(
-    () => ({ bebidas, acompanamientos, presupuesto }),
-    [bebidas, acompanamientos, presupuesto],
+    () => ({ bebidas, acompanamientos, presupuesto: presupuestoProductos }),
+    [bebidas, acompanamientos, presupuestoProductos],
   );
 
   useEffect(() => {
@@ -228,6 +229,13 @@ export function useEntregaCovers({
     [bebidas, seleccion],
   );
 
+  const recargoAcompanamientos = useMemo(
+    () => calcularRecargoAcompanamientos(lineas, acompanamientos, topeCover),
+    [acompanamientos, lineas, topeCover],
+  );
+  const adicional = adicionalManual + recargoAcompanamientos;
+  const presupuesto = totalEntradas + adicional;
+
   const repartoDeLinea = useCallback(
     (bebida: Bebida, formato: Formato) => {
       const clave = claveDe(bebida, formato);
@@ -248,7 +256,7 @@ export function useEntregaCovers({
   );
   const precioSeleccionado = costoSeleccion(seleccion, bebidas);
   const consumo = useMemo(() => consumoSeleccion(seleccion, bebidas), [seleccion, bebidas]);
-  const excedePresupuesto = precioSeleccionado > presupuesto;
+  const excedePresupuesto = precioSeleccionado > presupuestoProductos;
   const excedeStock = !stockSeleccionValido(seleccion, bebidas, acompanamientos);
   const mutacion = useMutation({
     mutationFn: async (payload: SolicitudEntregaCoversPayload) => {
@@ -299,10 +307,10 @@ export function useEntregaCovers({
   const puedeAgregar = useCallback(
     (bebida: Bebida, formato: Formato) =>
       !entregando &&
-      precioSeleccionado + precioVisible(bebida, formato) <= presupuesto &&
+      precioSeleccionado + precioVisible(bebida, formato) <= presupuestoProductos &&
       (consumo.get(bebida.presentacion_id) ?? 0) + consumoProducto(bebida, formato) <=
         bebida.stock_bar + 1e-9,
-    [consumo, entregando, precioSeleccionado, presupuesto],
+    [consumo, entregando, precioSeleccionado, presupuestoProductos],
   );
   const agregar = useCallback(
     (bebida: Bebida, formato: Formato) => {
@@ -457,6 +465,8 @@ export function useEntregaCovers({
     cambiarMontoAdicional,
     adicional,
     presupuesto,
+    presupuestoProductos,
+    recargoAcompanamientos,
     seleccion,
     visibles,
     gruposVisibles,

@@ -12,6 +12,7 @@ interface BottleMixerRowProps {
   max: number;
   /** Unidades que suma o resta cada toque; equivale a una unidad por botella. */
   step?: number;
+  disabled?: boolean;
   stock: number;
   textPrimary: string;
   textSecondary: string;
@@ -24,6 +25,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
   sabor,
   max,
   step = 1,
+  disabled = false,
   stock,
   textPrimary,
   textSecondary,
@@ -51,7 +53,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Quitar una unidad de ${nombre}`}
-        disabled={sabor.unidades <= step}
+        disabled={disabled || sabor.unidades <= step}
         onPress={onDecrement}
         style={{
           width: 32,
@@ -60,7 +62,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
           backgroundColor: 'rgba(155,155,155,0.1)',
           justifyContent: 'center',
           alignItems: 'center',
-          opacity: sabor.unidades <= step ? 0.4 : 1,
+          opacity: disabled || sabor.unidades <= step ? 0.4 : 1,
         }}
       >
         <Ionicons name="remove" size={16} color={textPrimary} />
@@ -78,7 +80,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Agregar una unidad de ${nombre}`}
-        disabled={sabor.unidades >= max}
+        disabled={disabled || sabor.unidades >= max}
         onPress={onIncrement}
         style={{
           width: 32,
@@ -87,7 +89,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
           backgroundColor: 'rgba(155,155,155,0.1)',
           justifyContent: 'center',
           alignItems: 'center',
-          opacity: sabor.unidades >= max ? 0.4 : 1,
+          opacity: disabled || sabor.unidades >= max ? 0.4 : 1,
         }}
       >
         <Ionicons name="add" size={16} color={textPrimary} />
@@ -95,6 +97,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Quitar ${nombre}`}
+        disabled={disabled}
         onPress={onDelete}
         style={{
           width: 32,
@@ -104,6 +107,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
           justifyContent: 'center',
           alignItems: 'center',
           marginLeft: 12,
+          opacity: disabled ? 0.4 : 1,
         }}
       >
         <Ionicons name="trash-outline" size={16} color={accentColor} />

@@ -357,8 +357,9 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
   if (!timer) return null;
 
-  return (
+  return [
     <Modal
+      key="edit-service"
       visible={visible}
       transparent
       animationType="fade"
@@ -495,24 +496,25 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
           />
         </View>
 
-        <HostessSelectModal
-          visible={showHostessModal}
-          onClose={() => setShowHostessModal(false)}
-          onToggle={toggleAnfitriona}
-          hostesses={anfitrionasDisponibles.map((anf) => ({
-            id: anf.id_usuario,
-            id_usuario: anf.id_usuario,
-            nick: anf.nick,
-            estado_servicio: currentHostessIds.includes(String(anf.id_usuario))
-              ? 1
-              : 0,
-            status: anf.status || 0,
-          }))}
-          allowedOccupiedIds={currentHostessIds}
-          selectedIds={anfitrionasSeleccionadas.map((id) => String(id))}
-          title="Seleccionar Anfitrionas"
-        />
       </View>
-    </Modal>
-  );
+    </Modal>,
+    <HostessSelectModal
+      key="hostess-select"
+      visible={showHostessModal}
+      onClose={() => setShowHostessModal(false)}
+      onToggle={toggleAnfitriona}
+      hostesses={anfitrionasDisponibles.map((anf) => ({
+        id: anf.id_usuario,
+        id_usuario: anf.id_usuario,
+        nick: anf.nick,
+        estado_servicio: currentHostessIds.includes(String(anf.id_usuario))
+          ? 1
+          : 0,
+        status: anf.status || 0,
+      }))}
+      allowedOccupiedIds={currentHostessIds}
+      selectedIds={anfitrionasSeleccionadas.map((id) => String(id))}
+      title="Seleccionar Anfitrionas"
+    />
+  ];
 };

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
+import { ContextualHelp } from '@/components/ui/ContextualHelp';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { formatCurrency } from '@/utils/format';
 import { styles } from './EntregaCoversModal.styles';
@@ -18,7 +19,7 @@ import { EntregaCoversProducto } from './entrega-covers/EntregaCoversProducto';
 import { claveDe, precioVisible } from './entrega-covers/helpers';
 import type { EntregaCoversModalProps } from './entrega-covers/types';
 import { useEntregaCovers } from './entrega-covers/useEntregaCovers';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 /** Icono Ionicons según el nombre de la categoría. */
 function iconoDeCategoria(nombre: string): [string, string] {
@@ -52,19 +53,11 @@ export function EntregaCoversModal({
   modo = 'entrega',
 }: EntregaCoversModalProps) {
   const { accentColor, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
-  // Las categorías arrancan abiertas: se guarda cuáles están plegadas y no
-  // cuáles están abiertas, así no hace falta sincronizar el estado con un
-  // efecto cada vez que el modal se abre o cambia la lista.
-  const [categoriasColapsadas, setCategoriasColapsadas] = useState<Set<string>>(() => new Set());
-
-  const toggleCategoria = (cat: string) => {
-    setCategoriasColapsadas(prev => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      return next;
-    });
-  };
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
+  const cerrarModal = useCallback(() => {
+    setCategoriaSeleccionada(null);
+    onClose();
+  }, [onClose]);
 
   const {
     busqueda,
@@ -83,6 +76,8 @@ export function EntregaCoversModal({
     cambiarMontoAdicional,
     adicional,
     presupuesto,
+    presupuestoProductos,
+    recargoAcompanamientos,
     seleccion,
     visibles,
     gruposVisibles,
@@ -101,7 +96,11 @@ export function EntregaCoversModal({
     quitarSabor,
     cerrar,
     entregar,
-  } = useEntregaCovers({ visible, grupo, tope, onClose, onEntregado, modo });
+  } = useEntregaCovers({ visible, grupo, tope, onClose: cerrarModal, onEntregado, modo });
+
+  const grupoCategoriaSeleccionada = gruposVisibles.find(
+    ({ categoria }) => categoria === categoriaSeleccionada,
+  );
 
   const fondo = cardBg;
   const submitDeshabilitado =
@@ -211,6 +210,26 @@ export function EntregaCoversModal({
                   <Ionicons name="close" size={22} color={textSecondary} />
                 </Pressable>
               </View>
+
+              <ContextualHelp
+                title={modo === 'solicitud' ? 'solicitar covers' : 'entregar covers'}
+                steps={[
+                  {
+                    title: 'Define la entrega',
+                    description: 'Si hay varias entradas, selecciona entrega grupal o individual y elige la entrada cuando corresponda.',
+                  },
+                  {
+                    title: 'Elige los productos',
+                    description: 'Abre una categoría, agrega productos y ajusta cantidades o acompañamientos sin superar el presupuesto ni el stock.',
+                  },
+                  {
+                    title: modo === 'solicitud' ? 'Solicita autorización' : 'Confirma la entrega',
+                    description: modo === 'solicitud'
+                      ? 'Revisa el resumen y solicita la autorización del cajero para enviar los covers a la barra.'
+                      : 'Revisa el total y confirma para enviar los productos seleccionados a la barra.',
+                  },
+                ]}
+              />
 
               {grupo && grupo.filas.length > 1 && (
                 <View style={{ marginTop: 8 }}>
@@ -404,11 +423,10 @@ export function EntregaCoversModal({
                         paddingVertical: 16,
                       }}
                     >
-                      Sin productos hasta {formatCurrency(presupuesto)} con stock en el bar.
+                      Sin productos hasta {formatCurrency(presupuestoProductos)} con stock en el bar.
                     </Text>
                   )}
                   {gruposVisibles.map(({ categoria, items }) => {
-                    const expandida = !categoriasColapsadas.has(categoria);
                     const [icono, colorIcono] = iconoDeCategoria(categoria);
                     const seleccionadosEnCategoria = items.reduce((sum, { bebida, formato }) => {
                       const clave = claveDe(bebida, formato);
@@ -421,17 +439,17 @@ export function EntregaCoversModal({
                         style={[
                           styles.categoryCard,
                           {
-                            borderColor: expandida ? accentColor : borderColor,
-                            backgroundColor: expandida ? `${accentColor}08` : 'transparent',
+                            borderColor,
+                            backgroundColor: surfaceMuted,
                           },
                         ]}
                       >
                         <Pressable
-                          onPress={() => toggleCategoria(categoria)}
+                          onPress={() => setCategoriaSeleccionada(categoria)}
                           style={styles.categoryHeader}
                           accessibilityRole="button"
-                          accessibilityLabel={`${expandida ? 'Colapsar' : 'Expandir'} categoría ${categoria}`}
-                          accessibilityState={{ expanded: expandida }}
+                          accessibilityLabel={`Ver productos de la categoría ${categoria}`}
+                          accessibilityHint="Abre los productos disponibles de esta categoría."
                         >
                           <View
                             style={[
@@ -478,42 +496,8 @@ export function EntregaCoversModal({
                               </Text>
                             </View>
                           )}
-                          <Ionicons
-                            name={expandida ? 'chevron-up' : 'chevron-down'}
-                            size={18}
-                            color={textSecondary}
-                          />
+                          <Ionicons name="chevron-forward" size={18} color={textSecondary} />
                         </Pressable>
-
-                        {expandida && (
-                          <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
-                            {items.map(({ bebida, formato }) => {
-                              const clave = claveDe(bebida, formato);
-                              return (
-                                <EntregaCoversProducto
-                                  key={clave}
-                                  bebida={bebida}
-                                  formato={formato}
-                                  linea={seleccion[clave]}
-                                  precio={precioVisible(bebida, formato)}
-                                  limiteAlcanzado={!puedeAgregar(bebida, formato)}
-                                  infoReparto={repartoDeLinea(bebida, formato)}
-                                  onAgregar={() => agregar(bebida, formato)}
-                                  onQuitar={() => quitar(clave)}
-                                  onAgregarSabor={(opcion) => agregarSabor(clave, opcion)}
-                                  onAjustarSabor={(presentacionId, delta) =>
-                                    ajustarSabor(clave, presentacionId, delta)
-                                  }
-                                  onQuitarSabor={(presentacionId) => quitarSabor(clave, presentacionId)}
-                                  accentColor={accentColor}
-                                  textPrimary={textPrimary}
-                                  textSecondary={textSecondary}
-                                  borderColor={borderColor}
-                                />
-                              );
-                            })}
-                          </View>
-                        )}
                       </View>
                     );
                   })}
@@ -532,13 +516,20 @@ export function EntregaCoversModal({
                   {filas.length === 1 ? 'entrada' : 'entradas'}
                 </Text>
                 <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>
-                  Productos {formatCurrency(precioSeleccionado)} de {formatCurrency(presupuesto)}
+                  Productos {formatCurrency(precioSeleccionado)} de{' '}
+                  {formatCurrency(presupuestoProductos)}
                   {adicional > 0 ? ` · se cobra en barra ${formatCurrency(adicional)}` : ''}
                 </Text>
+                {recargoAcompanamientos > 0 && (
+                  <Text style={{ color: textSecondary, fontSize: 11, marginTop: 4 }}>
+                    Acompañamientos sobre el tope:{' '}
+                    {formatCurrency(recargoAcompanamientos)}
+                  </Text>
+                )}
                 {excedePresupuesto && (
                   <Text style={{ color: '#F59E0B', fontSize: 11, marginTop: 4 }}>
-                    Faltan {formatCurrency(precioSeleccionado - presupuesto)} de presupuesto para
-                    esta selección.
+                    Faltan {formatCurrency(precioSeleccionado - presupuestoProductos)} de
+                    presupuesto para esta selección.
                   </Text>
                 )}
                 {excedeStock ? (
@@ -582,6 +573,73 @@ export function EntregaCoversModal({
           </View>
         </View>
       </KeyboardAvoidingView>
+      <Modal
+        visible={grupoCategoriaSeleccionada !== undefined}
+        avoidKeyboard={false}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCategoriaSeleccionada(null)}
+      >
+        <View style={styles.backdrop}>
+          <View style={[styles.card, { backgroundColor: fondo, borderColor, maxHeight: '92%' }]}>
+            <View style={[styles.header, { alignItems: 'center' }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionLabel, { color: textSecondary, marginTop: 0 }]}>
+                  PRODUCTOS DE LA CATEGORÍA
+                </Text>
+                <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 16 }}>
+                  {grupoCategoriaSeleccionada?.categoria}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setCategoriaSeleccionada(null)}
+                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar productos de la categoría"
+              >
+                <Ionicons name="close" size={22} color={textSecondary} />
+              </Pressable>
+            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 8 }}
+            >
+              {grupoCategoriaSeleccionada?.items.map(({ bebida, formato }) => {
+                const clave = claveDe(bebida, formato);
+                return (
+                  <EntregaCoversProducto
+                    key={clave}
+                    bebida={bebida}
+                    formato={formato}
+                    linea={seleccion[clave]}
+                    precio={precioVisible(bebida, formato)}
+                    limiteAlcanzado={!puedeAgregar(bebida, formato)}
+                    infoReparto={repartoDeLinea(bebida, formato)}
+                    onAgregar={() => agregar(bebida, formato)}
+                    onQuitar={() => quitar(clave)}
+                    onAgregarSabor={(opcion) => agregarSabor(clave, opcion)}
+                    onAjustarSabor={(presentacionId, delta) =>
+                      ajustarSabor(clave, presentacionId, delta)
+                    }
+                    onQuitarSabor={(presentacionId) => quitarSabor(clave, presentacionId)}
+                    accentColor={accentColor}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                    borderColor={borderColor}
+                  />
+                );
+              })}
+            </ScrollView>
+            <AnimatedButton
+              onPress={() => setCategoriaSeleccionada(null)}
+              style={[styles.submit, { backgroundColor: accentColor }]}
+            >
+              <Text style={styles.submitText}>ACEPTAR</Text>
+            </AnimatedButton>
+          </View>
+        </View>
+      </Modal>
     </Modal>
   );
 }

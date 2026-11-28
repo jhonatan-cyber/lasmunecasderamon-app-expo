@@ -43,6 +43,7 @@ export interface Acompanamiento {
   presentacion_id: string;
   producto_nombre: string;
   presentacion_nombre: string;
+  precio: number;
   stock_bar: number;
 }
 

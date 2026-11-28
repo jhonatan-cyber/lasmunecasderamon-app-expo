@@ -14,6 +14,7 @@ interface ShortMixerRowProps {
   /** Número del corto cuando la línea se configura por unidad. */
   unidad?: number;
   loading: boolean;
+  disabled?: boolean;
   borderColor: string;
   textPrimary: string;
   textSecondary: string;
@@ -25,6 +26,7 @@ export const ShortMixerRow: React.FC<ShortMixerRowProps> = ({
   item,
   unidad,
   loading,
+  disabled = false,
   borderColor,
   textPrimary,
   textSecondary,
@@ -38,13 +40,14 @@ export const ShortMixerRow: React.FC<ShortMixerRowProps> = ({
         accessibilityLabel={`Soda o gaseosa para ${item.nombre}${
           unidad ? `, corto ${unidad}` : ""
         }`}
-        disabled={loading}
+        disabled={disabled || loading}
         onPress={onPress}
         style={{
           padding: 12,
           borderColor,
           borderWidth: 1,
           borderRadius: BorderRadius.full,
+          opacity: disabled || loading ? 0.5 : 1,
         }}
       >
         {unidad !== undefined && (

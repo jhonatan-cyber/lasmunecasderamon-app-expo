@@ -10,6 +10,7 @@ export function useVentaSearch() {
   const [searchProducto, setSearchProducto] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbortController = useRef<AbortController | null>(null);
   const searchSeq = useRef(0);
@@ -17,7 +18,10 @@ export function useVentaSearch() {
   const setSearchProductoInput = useCallback((value: string) => {
     searchAbortController.current?.abort();
     searchAbortController.current = null;
+    searchSeq.current++;
     setSearchProducto(value);
+    setSearchResults([]);
+    setSearchError('');
     if (value.trim()) {
       setSearchLoading(true);
       return;
@@ -25,7 +29,6 @@ export function useVentaSearch() {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = null;
     searchSeq.current++;
-    setSearchResults([]);
     setSearchLoading(false);
   }, []);
 
@@ -43,10 +46,17 @@ export function useVentaSearch() {
         setSearchResults(
           filterForSaleProducts((res as any).data).map(mapForSaleProduct),
         );
+      } else {
+        setSearchResults([]);
+        setSearchError((res as any)?.message || 'No se pudo buscar productos.');
       }
     } catch (error) {
       if (controller.signal.aborted) return;
-      logger.fetchError(error, { context: 'NuevaVenta:searchProducts' });
+      logger.fetchError(error, { context: 'ProductSearch:searchProducts' });
+      if (seq === searchSeq.current) {
+        setSearchResults([]);
+        setSearchError('No se pudo buscar productos. Revisa tu conexión e inténtalo nuevamente.');
+      }
     } finally {
       if (!controller.signal.aborted && seq === searchSeq.current) {
         if (searchAbortController.current === controller) {
@@ -88,6 +98,7 @@ export function useVentaSearch() {
     const seq = ++searchSeq.current;
     if (!term) {
       setSearchResults([]);
+      setSearchError('');
       setSearchLoading(false);
       return;
     }
@@ -104,6 +115,7 @@ export function useVentaSearch() {
     setSearchProducto: setSearchProductoInput,
     searchResults,
     searchLoading,
+    searchError,
     handleSearchNow,
     handleClearSearch,
   };

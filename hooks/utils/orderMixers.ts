@@ -5,6 +5,31 @@ import {
 } from "./productConfiguration";
 import { parseOpcionesVenta } from "./saleChoice";
 
+function enabledForSaleAndCover(product: any) {
+  const options = parseOpcionesVenta(product.opciones_venta);
+  if (options.length === 0) return true;
+  const bottleOption = options.find((option) => option.tipo === "botella");
+  if (!bottleOption) return false;
+  const enabledForSale =
+    bottleOption.en_venta !== false &&
+    (bottleOption.en_venta === true ||
+      bottleOption.vender_con_anfitriona !== false);
+  return enabledForSale && bottleOption.cover_habilitado !== false;
+}
+
+function hasNonAlcoholicCategory(product: any) {
+  const category = String(
+    product.categoria_nombre ??
+      product.categoria ??
+      product.category_name ??
+      "",
+  )
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  return category.includes("analcohol");
+}
+
 export function availableOrderMixers(
   bar: any[],
   item: any,
@@ -17,13 +42,16 @@ export function availableOrderMixers(
     // Reparto entre sabores: basta con que el sabor tenga stock para una unidad
     // por botella; el reparto exacto se valida al agregar el producto.
     if (bottleMixerUnits(item) <= 0) return [];
-    return bar.filter(
-      (product) =>
-        String(product.id) !== String(item.presentacion_id) &&
-        Number(product.producto_estado ?? 1) === 1 &&
+    return bar.filter((product) => {
+      if (String(product.id) === String(item.presentacion_id)) return false;
+      if (Number(product.producto_estado ?? 1) !== 1) return false;
+      if (!enabledForSaleAndCover(product)) return false;
+
+      return (
         Number(product.stock_bar || 0) >= quantity &&
-        matchesProductSearch(product, search),
-    );
+        matchesProductSearch(product, search)
+      );
+    });
   }
   const consumption = shortMixerConsumption(item);
   if (
@@ -36,17 +64,18 @@ export function availableOrderMixers(
     return [];
   return bar.filter((product) => {
     if (String(product.id) === String(item.presentacion_id)) return false;
+    if (Number(product.producto_estado ?? 1) !== 1) return false;
     const bottleOption = parseOpcionesVenta(product.opciones_venta).find(
       (option) => option.tipo === "botella",
     );
     if (item.shot_anfitriona) {
-      // Corto con anfitriona: mismas bebidas que colaciones
-      if (bottleOption?.corto_anfitriona_habilitado === false) return false;
-      if (bottleOption?.colacion_habilitada !== true) return false;
+      if (
+        !hasNonAlcoholicCategory(product) ||
+        bottleOption?.colacion_habilitada !== true
+      )
+        return false;
     } else {
-      // Corto cliente: debe estar habilitado para cover y ser un producto activo
-      if (bottleOption?.cover_habilitado !== true) return false;
-      if (Number(product.producto_estado ?? 1) !== 1) return false;
+      if (!enabledForSaleAndCover(product)) return false;
     }
     const stock = Number(product.stock_bar || 0);
     if (item.shot_anfitriona) {

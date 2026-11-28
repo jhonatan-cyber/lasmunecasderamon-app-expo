@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
@@ -40,6 +41,7 @@ export interface CheckoutBarShellProps {
   textPrimary?: string;
   textSecondary?: string;
   accentColor?: string;
+  onLayout?: (event: LayoutChangeEvent) => void;
 }
 
 /** Barra inferior compartida: controles opcionales, resumen a la izquierda y CTA a la derecha. */
@@ -59,6 +61,7 @@ export const CheckoutBarShell: React.FC<CheckoutBarShellProps> = ({
   textPrimary,
   textSecondary,
   accentColor,
+  onLayout,
 }) => {
   const theme = useAccentColor();
   const bg = cardBg ?? theme.cardBg;
@@ -85,6 +88,7 @@ export const CheckoutBarShell: React.FC<CheckoutBarShellProps> = ({
           paddingBottom: Math.max(bottomInset, 12),
         },
       ]}
+      onLayout={onLayout}
     >
       {controls}
       <View style={styles.mainRow}>

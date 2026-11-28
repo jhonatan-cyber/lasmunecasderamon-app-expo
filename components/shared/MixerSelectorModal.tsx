@@ -30,6 +30,7 @@ interface MixerSelectorModalProps {
   accentColor: string;
   sinRecargo: boolean;
   topeAcompanamiento: number;
+  disabled?: boolean;
   stockLabel: (choice: MixerChoice) => string | null;
   precioOf: (choice: MixerChoice) => number;
   onSelect: (choice: MixerChoice) => void;
@@ -49,6 +50,7 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
   accentColor,
   sinRecargo,
   topeAcompanamiento,
+  disabled = false,
   stockLabel,
   precioOf,
   onSelect,
@@ -103,12 +105,14 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
                 <Pressable
                   key={p.id}
                   accessibilityRole="button"
+                  disabled={disabled}
                   onPress={() => onSelect(p)}
                   style={{
                     paddingVertical: 14,
                     borderBottomWidth: 1,
                     borderColor,
                     backgroundColor: cardBg,
+                    opacity: disabled ? 0.5 : 1,
                   }}
                 >
                   <View

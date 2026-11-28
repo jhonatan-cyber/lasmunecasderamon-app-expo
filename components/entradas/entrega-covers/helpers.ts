@@ -42,6 +42,22 @@ function numero(valor: unknown): number {
   return Number.isFinite(convertido) ? convertido : 0;
 }
 
+function precioUnitarioAcompanamiento(fila: Record<string, unknown>): number {
+  const botella = opcionesDe(fila.opciones_venta).find((opcion) => opcion.tipo === 'botella');
+  const candidatos = [
+    botella?.precio,
+    botella?.precio_sin_anfitriona,
+    fila.precio_venta,
+    fila.precio,
+    fila.producto_precio,
+  ];
+  for (const candidato of candidatos) {
+    const precio = Number(candidato);
+    if (Number.isFinite(precio) && precio > 0) return Math.round(precio);
+  }
+  return 0;
+}
+
 /** Mapea la fila cruda de `products/for-sale` a una bebida utilizable. */
 export function bebidaDe(valor: unknown): Bebida | null {
   if (!valor || typeof valor !== 'object') return null;
@@ -79,6 +95,7 @@ export function acompanamientoDe(valor: unknown): Acompanamiento | null {
     presentacion_id: presentacionId,
     producto_nombre: String(fila.producto_nombre ?? ''),
     presentacion_nombre: String(fila.presentacion_nombre ?? ''),
+    precio: precioUnitarioAcompanamiento(fila),
     stock_bar: numero(fila.stock_bar),
   };
 }
@@ -120,6 +137,28 @@ export function costoSeleccion(seleccion: Seleccion, bebidas: Bebida[]): number 
     const bebida = bebidas.find((item) => item.presentacion_id === id);
     return total + (bebida ? precioVisible(bebida, formato) * linea.cantidad : 0);
   }, 0);
+}
+
+export function calcularRecargoAcompanamientos(
+  lineas: LineaEntrega[],
+  acompanamientos: Acompanamiento[],
+  tope: number,
+): number {
+  const limite = Math.round(Number(tope));
+  if (!Number.isFinite(limite) || limite <= 0) return 0;
+
+  return lineas.reduce(
+    (total, linea) =>
+      total +
+      linea.reparto.reduce((suma, item) => {
+        const precio = acompanamientos.find(
+          (opcion) => opcion.presentacion_id === item.presentacion_id,
+        )?.precio;
+        const unidades = Math.max(0, Math.floor(Number(item.unidades) || 0));
+        return suma + Math.max(0, Math.round(precio ?? 0) - limite) * unidades;
+      }, 0),
+    0,
+  );
 }
 
 export function consumoProducto(bebida: Bebida, formato: Formato): number {

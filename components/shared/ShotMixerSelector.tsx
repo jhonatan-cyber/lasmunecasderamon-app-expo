@@ -67,9 +67,11 @@ export function ShotMixerSelector({
   onChangeBottle,
   bottle = false,
   compact = false,
+  disabled = false,
 }: {
   compact?: boolean;
   bottle?: boolean;
+  disabled?: boolean;
   items: MixerSourceItem[];
   onChange?: (index: number, mixer: ShortMixer) => void;
   onChangeBottle?: (index: number, sabores: AcompanamientoBotellaItem[]) => void;
@@ -284,8 +286,9 @@ export function ShotMixerSelector({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Agregar sabor para ${item.nombre}`}
-                  disabled={loading || restante < botellas}
+                  disabled={disabled || loading || restante < botellas}
                   onPress={() => {
+                    if (disabled) return;
                     setSearch("");
                     setSelected(index);
                   }}
@@ -294,7 +297,8 @@ export function ShotMixerSelector({
                     borderColor,
                     borderWidth: 1,
                     borderRadius: BorderRadius.full,
-                    opacity: loading || restante < botellas ? 0.5 : 1,
+                    opacity:
+                      disabled || loading || restante < botellas ? 0.5 : 1,
                   }}
                 >
                   <Text style={{ color: textPrimary }}>Seleccionar bebida</Text>
@@ -307,6 +311,7 @@ export function ShotMixerSelector({
                       sabor={sabor}
                       max={max}
                       step={botellas}
+                      disabled={disabled}
                       stock={stockOf(sabor.presentacion_id)}
                       textPrimary={textPrimary}
                       textSecondary={textSecondary}
@@ -365,13 +370,16 @@ export function ShotMixerSelector({
                 item={item}
                 unidad={item.unidad}
                 loading={loading}
+                disabled={disabled}
                 borderColor={borderColor}
                 textPrimary={textPrimary}
                 textSecondary={textSecondary}
                 includedText={`${item.cantidad * (item.shot_anfitriona ? hostessMixerMl(item) : 1)} ${item.shot_anfitriona ? 'ml incluidos' : 'unidades completas incluidas'}`}
                 onPress={() => {
-                  setSearch("");
-                  setSelected(index);
+                  if (!disabled) {
+                    setSearch("");
+                    setSelected(index);
+                  }
                 }}
               />
             )}
@@ -391,10 +399,11 @@ export function ShotMixerSelector({
         accentColor={accentColor}
         sinRecargo={sinRecargo}
         topeAcompanamiento={topeAcompanamiento}
+        disabled={disabled}
         stockLabel={stockLabel}
         precioOf={(choice) => priceOf(choice.id)}
         onSelect={(p) => {
-          if (selected !== null) {
+          if (!disabled && selected !== null) {
             if (bottle) addFlavor(selected, p);
             else
               onChange?.(selected, {

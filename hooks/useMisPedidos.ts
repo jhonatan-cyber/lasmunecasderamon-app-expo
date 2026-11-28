@@ -55,7 +55,7 @@ const extractRows = (payload: any): any[] => {
 };
 
 /**
- * Pedidos propios del garzón (`/orders/user`), con el mismo listado que usa el
+ * Pedidos propios del usuario autenticado (`/orders/user`), con el mismo listado que usa el
  * dashboard. Se lee a través del espejo para no dejar la pantalla vacía cuando
  * se cae la conexión.
  */

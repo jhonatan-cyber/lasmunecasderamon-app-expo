@@ -1,6 +1,7 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import { apiClient } from '@/api/request';
 import { InvalidResponseError, NetworkError, TimeoutError, UnauthorizedError, httpDetailsOf } from '@/api/errors';
+import logger from '@/utils/logger';
 import { TokenStorage } from '@/utils/tokenStorage';
 
 // Mock de @/api/token para mantener un token en memoria durante los tests.
@@ -65,15 +66,54 @@ describe('peticiones con renovación de sesión', () => {
       return calls.length === 1 ? json({}, 401) : calls.length === 2
         ? json({ success: true, token: 'nuevo', refreshToken: 'rotado' }) : json({ success: true, data: { id: 'pedido' } });
     }));
-    const result = await apiClient('/orders', { method: 'POST', retries: 0, headers: { 'x-idempotency-key': 'intencion-1' }, body: JSON.stringify({ total: 100 }) });
+    const result = await apiClient('/orders', { method: 'POST', retries: 0, headers: { 'x-idempotency-key': 'intencion-1', 'x-request-id': 'req-client-1' }, body: JSON.stringify({ total: 100 }) });
     expect(result).toEqual({ success: true, data: { id: 'pedido' } });
     expect(calls.map(c => c.url)).toEqual(['http://dashboard.test/api/orders', 'http://dashboard.test/api/auth/refresh', 'http://dashboard.test/api/orders']);
     expect(new Headers(calls[0].options.headers).get('Authorization')).toBe('Bearer viejo');
     expect(new Headers(calls[2].options.headers).get('Authorization')).toBe('Bearer nuevo');
     expect(new Headers(calls[2].options.headers).get('x-idempotency-key')).toBe('intencion-1');
+    expect(new Headers(calls[0].options.headers).get('x-request-id')).toBe('req-client-1');
+    expect(new Headers(calls[2].options.headers).get('x-request-id')).toBe('req-client-1');
     expect(calls[2].options.body).toBe(calls[0].options.body);
     expect(TokenStorage.saveRefreshToken).toHaveBeenCalledWith('rotado');
     expect(unauthorized).not.toHaveBeenCalled();
+  });
+
+  it('mantiene aislados los request IDs de llamadas concurrentes y sus logs', async () => {
+    const requestIds: (string | null)[] = [];
+    const logSpy = vi.spyOn(logger, 'debug');
+    let releaseFetches!: () => void;
+    const bothRequestsStarted = new Promise<void>(resolve => {
+      releaseFetches = resolve;
+    });
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, options: RequestInit) => {
+      requestIds.push(new Headers(options.headers).get('x-request-id'));
+      if (requestIds.length === 2) releaseFetches();
+      await bothRequestsStarted;
+      return json({ success: true });
+    }));
+
+    await Promise.all([
+      apiClient('/parallel/first', { retries: 0 }),
+      apiClient('/parallel/second', { retries: 0 }),
+    ]);
+
+    const requestLogIds = logSpy.mock.calls
+      .filter(([message]) => message === 'API request')
+      .map(([, meta]) => meta?.requestId);
+    const tokenLogIds = logSpy.mock.calls
+      .filter(([message]) => message === 'API token loaded')
+      .map(([, meta]) => meta?.requestId);
+    const completionLogIds = logSpy.mock.calls
+      .filter(([message]) => message === 'API call')
+      .map(([, meta]) => meta?.requestId);
+
+    expect(requestIds).toHaveLength(2);
+    expect(requestIds.every(Boolean)).toBe(true);
+    expect(new Set(requestIds).size).toBe(2);
+    expect(new Set(requestLogIds)).toEqual(new Set(requestIds));
+    expect(new Set(tokenLogIds)).toEqual(new Set(requestIds));
+    expect(new Set(completionLogIds)).toEqual(new Set(requestIds));
   });
 
   it('limita la renovación a una cuando la petición vuelve a responder 401', async () => {

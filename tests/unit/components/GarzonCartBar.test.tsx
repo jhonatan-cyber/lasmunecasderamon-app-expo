@@ -32,6 +32,7 @@ vi.mock("react-native", () => ({
       onClick={onPress}
       aria-label={accessibilityLabel}
       aria-selected={accessibilityState?.selected}
+      aria-expanded={accessibilityState?.expanded}
       disabled={disabled}
     >
       {children}
@@ -42,6 +43,7 @@ vi.mock("react-native", () => ({
 vi.mock("@expo/vector-icons/Ionicons", () => ({ default: () => <span /> }));
 
 const baseProps = {
+  itemCount: 3,
   tipEnabled: false,
   setTipEnabled: vi.fn(),
   metodoPago: "efectivo" as const,
@@ -62,9 +64,21 @@ const baseProps = {
   textSecondary: "#aaa",
 };
 
+const openCheckoutOptions = () =>
+  fireEvent.click(screen.getByRole("button", { name: /^Editar pago y propina/ }));
+
 describe("selector de método de pago del carrito", () => {
-  it("muestra los tres métodos que admite el pedido", () => {
+  it("mantiene compactos los controles secundarios y permite desplegarlos", () => {
     render(<GarzonCartBar {...baseProps} />);
+
+    expect(screen.getByText("Propina inactiva · Pago efectivo")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Pago efectivo" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Enviar Pedido" })).toBeTruthy();
+
+    const optionsButton = screen.getByRole("button", { name: /^Editar pago y propina/ });
+    expect(optionsButton.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(optionsButton);
+
     for (const metodo of ["efectivo", "tarjeta", "transferencia"]) {
       expect(screen.getByRole("button", { name: `Pago ${metodo}` })).toBeTruthy();
     }
@@ -73,6 +87,7 @@ describe("selector de método de pago del carrito", () => {
   it("marca el método elegido y avisa al cambiar", () => {
     const setMetodoPago = vi.fn();
     render(<GarzonCartBar {...baseProps} setMetodoPago={setMetodoPago} />);
+    openCheckoutOptions();
 
     expect(
       screen.getByRole("button", { name: "Pago efectivo" }).getAttribute("aria-selected")
@@ -99,6 +114,12 @@ describe("selector de método de pago del carrito", () => {
 });
 
 describe("ver detalle del pedido", () => {
+  it("muestra la cantidad de unidades en el resumen fijo", () => {
+    render(<GarzonCartBar {...baseProps} />);
+
+    expect(screen.getByText("3 productos")).toBeTruthy();
+  });
+
   it("abre el detalle del pedido al tocar el total", () => {
     const onViewCart = vi.fn();
     render(<GarzonCartBar {...baseProps} onViewCart={onViewCart} />);
@@ -110,11 +131,28 @@ describe("ver detalle del pedido", () => {
 
 describe("foto del baucher obligatoria con transferencia", () => {
   it("pide la foto cuando el pago es transferencia y aún no está adjunta", () => {
-    render(<GarzonCartBar {...baseProps} metodoPago="transferencia" />);
+    const onTakeBaucherPhoto = vi.fn();
+    render(
+      <GarzonCartBar
+        {...baseProps}
+        metodoPago="transferencia"
+        onTakeBaucherPhoto={onTakeBaucherPhoto}
+      />
+    );
 
     expect(
-      screen.getByRole("button", { name: "Sacar foto del baucher (obligatoria)" })
+      screen.getByRole("button", { name: /Editar pago y propina.*Falta comprobante/ })
     ).toBeTruthy();
+    const receiptButton = screen.getByRole("button", {
+      name: "Sacar foto del baucher (obligatoria)",
+    });
+    fireEvent.click(receiptButton);
+    expect(onTakeBaucherPhoto).toHaveBeenCalledTimes(1);
+
+    openCheckoutOptions();
+    expect(
+      screen.getAllByRole("button", { name: "Sacar foto del baucher (obligatoria)" })
+    ).toHaveLength(1);
     expect(
       screen.queryByRole("button", { name: "Repetir foto del baucher" })
     ).toBeNull();
@@ -131,6 +169,7 @@ describe("foto del baucher obligatoria con transferencia", () => {
       />
     );
 
+    expect(screen.getByText("Comprobante adjunto · tocar para reemplazar")).toBeTruthy();
     expect(screen.getByRole("img", { name: "baucher" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Repetir foto del baucher" }));
     expect(onTakeBaucherPhoto).toHaveBeenCalledTimes(1);
@@ -142,21 +181,5 @@ describe("foto del baucher obligatoria con transferencia", () => {
     expect(
       screen.queryByRole("button", { name: "Sacar foto del baucher (obligatoria)" })
     ).toBeNull();
-  });
-
-  it("abre la cámara desde el aviso cuando falta la foto", () => {
-    const onTakeBaucherPhoto = vi.fn();
-    render(
-      <GarzonCartBar
-        {...baseProps}
-        metodoPago="transferencia"
-        onTakeBaucherPhoto={onTakeBaucherPhoto}
-      />
-    );
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Sacar foto del baucher (obligatoria)" })
-    );
-    expect(onTakeBaucherPhoto).toHaveBeenCalledTimes(1);
   });
 });

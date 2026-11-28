@@ -60,6 +60,7 @@ const abortError = (): Error =>
   Object.assign(new Error('Petición abortada'), { name: 'AbortError' });
 
 const logApiCall = (
+  requestId: string,
   endpoint: string,
   attempt: number,
   maxRetries: number,
@@ -68,6 +69,7 @@ const logApiCall = (
   durationMs?: number,
 ) => {
   const logEntry = {
+    requestId,
     endpoint,
     url: `${API_URL}${endpoint}`,
     attempt: attempt + 1,
@@ -99,8 +101,10 @@ export const apiClient = async <T = ApiRes<unknown>>(
     ...fetchOptions
   } = options;
   const url = `${API_URL}${endpoint}`;
-  logger.debug("API request", { url, endpoint });
   const headers = new Headers(fetchOptions.headers || {});
+  const requestId = headers.get("x-request-id") || `req_${createQueueId()}`;
+  headers.set("x-request-id", requestId);
+  logger.debug("API request", { url, endpoint, requestId });
   const isFormData =
     fetchOptions.body &&
     typeof fetchOptions.body === "object" &&
@@ -114,9 +118,9 @@ export const apiClient = async <T = ApiRes<unknown>>(
 
   if (tokenInMemory) {
     headers.set("Authorization", `Bearer ${tokenInMemory}`);
-    logger.debug("API token loaded", { hasToken: true });
+    logger.debug("API token loaded", { hasToken: true, requestId });
   } else {
-    logger.debug("API token loaded", { hasToken: false });
+    logger.debug("API token loaded", { hasToken: false, requestId });
   }
 
   // Idempotencia global: todo POST/PUT/PATCH lleva x-idempotency-key estable
@@ -204,7 +208,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
             const newToken = await getTokenInMemoryAsync();
             headers.set('Authorization', `Bearer ${newToken}`);
             config.headers = headers;
-            logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
+            logApiCall(requestId, endpoint, attempt, maxRetries, response.status, undefined, durationMs);
             // El reenvío de sesión tiene su propio presupuesto, incluso con retries=0.
             attempt--;
             continue;
@@ -213,6 +217,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
 
         notifyUnauthorized();
         logApiCall(
+          requestId,
           endpoint,
           attempt,
           maxRetries,
@@ -229,7 +234,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
         // Autenticado pero sin permiso: no es un token vencido (no se reintenta
         // ni se renueva), suele ser rol revocado/borrado. Se avisa para que el
         // authStore revalide la sesión contra /auth/me.
-        logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
+        logApiCall(requestId, endpoint, attempt, maxRetries, response.status, undefined, durationMs);
         notifyForbidden();
         const serverMessage =
           data.message || data.error || "Sin permiso para esta acción";
@@ -242,6 +247,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
       if (!response.ok) {
         if (!shouldRetry(null, response.status) || attempt === maxRetries) {
           logApiCall(
+            requestId,
             endpoint,
             attempt,
             maxRetries,
@@ -263,6 +269,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
           data.error || data.message || "Error en la petición API",
         );
         logApiCall(
+          requestId,
           endpoint,
           attempt,
           maxRetries,
@@ -277,6 +284,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
       }
 
       logApiCall(
+        requestId,
         endpoint,
         attempt,
         maxRetries,
@@ -295,7 +303,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
       lastError = err;
 
       if (!shouldRetry(err) || attempt === maxRetries) {
-        logApiCall(endpoint, attempt, maxRetries, undefined, err, durationMs);
+        logApiCall(requestId, endpoint, attempt, maxRetries, undefined, err, durationMs);
         if (err?.name === "AbortError") throw new TimeoutError();
 
         if (
@@ -313,7 +321,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
         throw err;
       }
 
-      logApiCall(endpoint, attempt, maxRetries, undefined, err, durationMs);
+      logApiCall(requestId, endpoint, attempt, maxRetries, undefined, err, durationMs);
       if (attempt < maxRetries) {
         await delay(Math.min(1000 * 2 ** attempt, 10000));
       }

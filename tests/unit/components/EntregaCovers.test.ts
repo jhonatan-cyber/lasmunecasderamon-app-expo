@@ -69,6 +69,7 @@ const cover = (extra: Partial<Acompanamiento> = {}): Acompanamiento => ({
   presentacion_id: 'cover-1',
   producto_nombre: 'Coca-Cola',
   presentacion_nombre: '350 ml',
+  precio: 0,
   stock_bar: 10,
   ...extra,
 });
@@ -80,7 +81,12 @@ function montar(
   modo: 'entrega' | 'solicitud' = 'entrega',
   cantidad = 2,
   tope = 99999,
-  opciones: { montoEntrada?: number; precioDestilados?: number; precioCampana?: number } = {},
+  opciones: {
+    montoEntrada?: number;
+    precioDestilados?: number;
+    precioCampana?: number;
+    precioAcompanamiento?: number;
+  } = {},
 ) {
   const montoEntrada = opciones.montoEntrada ?? 5000;
   vi.mocked(categoriesService.listForSale).mockResolvedValue({
@@ -127,7 +133,25 @@ function montar(
   } as never));
   vi.mocked(productsService.forCover).mockResolvedValue({
     success: true,
-    data: [],
+    data:
+      opciones.precioAcompanamiento === undefined
+        ? []
+        : [
+            {
+              presentacion_id: 'cover-1',
+              producto_nombre: 'Coca-Cola',
+              presentacion_nombre: '350 ml',
+              precio_venta: opciones.precioAcompanamiento,
+              stock_bar: 10,
+            },
+            {
+              presentacion_id: 'cover-2',
+              producto_nombre: 'Sprite',
+              presentacion_nombre: '350 ml',
+              precio_venta: opciones.precioAcompanamiento,
+              stock_bar: 10,
+            },
+          ],
   });
   vi.mocked(entradasService.entregarGrupo).mockResolvedValue({
     success: true,
@@ -243,6 +267,74 @@ describe('useEntregaCovers: contrato compartido', () => {
     });
     expect(entradasService.entregar).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('suma al cobro el excedente del acompañamiento de corte sin ampliar el presupuesto de productos', async () => {
+    const { result } = montar('entrega', 1, 2500, {
+      montoEntrada: 5000,
+      precioAcompanamiento: 6000,
+    });
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+    act(() => result.current.cambiarMontoAdicional('1000'));
+    const corte = result.current.visibles.find(
+      (item) => item.bebida.presentacion_id === 'p1' && item.formato === 'corte',
+    )!.bebida;
+
+    act(() => {
+      result.current.agregar(corte, 'corte');
+      result.current.agregarSabor('p1:corte', result.current.acompanamientos[0]!);
+    });
+
+    expect(result.current.recargoAcompanamientos).toBe(3500);
+    expect(result.current.presupuestoProductos).toBe(6000);
+    expect(result.current.adicional).toBe(4500);
+
+    await act(async () => {
+      await result.current.entregar();
+    });
+
+    expect(vi.mocked(entradasService.entregarGrupo).mock.calls[0]![0]).toMatchObject({
+      monto_adicional: 4500,
+      unidades: [{ acompanamientos: [{ presentacion_id: 'cover-1', unidades: 1 }] }],
+    });
+  });
+
+  it('multiplica el excedente de acompañamientos por las unidades de botella', async () => {
+    const { result } = montar('entrega', 1, 4500, {
+      montoEntrada: 5000,
+      precioDestilados: 4000,
+      precioAcompanamiento: 6000,
+    });
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+    const botella = result.current.visibles.find(
+      (item) => item.bebida.presentacion_id === 'p1' && item.formato === 'botella',
+    )!.bebida;
+
+    act(() => {
+      result.current.agregar(botella, 'botella');
+      result.current.agregarSabor('p1:botella', result.current.acompanamientos[0]!);
+      result.current.agregarSabor('p1:botella', result.current.acompanamientos[1]!);
+    });
+
+    expect(result.current.recargoAcompanamientos).toBe(3000);
+    expect(result.current.presupuestoProductos).toBe(5000);
+    expect(result.current.adicional).toBe(3000);
+
+    await act(async () => {
+      await result.current.entregar();
+    });
+
+    expect(vi.mocked(entradasService.entregarGrupo).mock.calls[0]![0]).toMatchObject({
+      monto_adicional: 3000,
+      unidades: [
+        {
+          acompanamientos: [
+            { presentacion_id: 'cover-1', unidades: 1 },
+            { presentacion_id: 'cover-2', unidades: 1 },
+          ],
+        },
+      ],
+    });
   });
 
   it('permite elegir una entrada individual y limita el presupuesto a esa entrada', async () => {
@@ -428,6 +520,18 @@ describe('helpers de entrega de covers', () => {
   it('descarta filas sin presentación', () => {
     expect(bebidaDe({ producto_nombre: 'Fantasma' })).toBeNull();
     expect(acompanamientoDe(null)).toBeNull();
+  });
+
+  it('mapea el precio del acompañamiento desde la opción de botella antes del precio general', () => {
+    expect(
+      acompanamientoDe({
+        presentacion_id: 'cover-1',
+        precio_venta: 5000,
+        opciones_venta: JSON.stringify([
+          { tipo: 'botella', precio: 0, precio_sin_anfitriona: 6500 },
+        ]),
+      }),
+    ).toMatchObject({ precio: 6500 });
   });
 
   it('lista los formatos que entran en el presupuesto del grupo', () => {

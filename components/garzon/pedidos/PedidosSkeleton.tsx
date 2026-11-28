@@ -6,12 +6,14 @@ interface PedidosSkeletonProps {
   bg: string;
   gradientColors: string[];
   insets: { top: number };
+  headerSlot?: React.ReactNode;
 }
 
 export const PedidosSkeleton: React.FC<PedidosSkeletonProps> = ({
   bg,
   gradientColors,
   insets,
+  headerSlot,
 }) => {
   const { width, isTablet, isLandscape } = useResponsiveMetrics();
   const columnas = isTablet || isLandscape ? 3 : 2;
@@ -30,6 +32,8 @@ export const PedidosSkeleton: React.FC<PedidosSkeletonProps> = ({
       gap={15}
       headerMinHeight={140}
       cardAccessibilityLabel="Ver pedido"
+      showHeader={!headerSlot}
+      headerSlot={headerSlot}
     />
   );
 };

@@ -155,6 +155,17 @@ export function useGarzonProductos() {
         const clientData =
           clientRes.status === "fulfilled" ? clientRes.value.data : null;
 
+        const productError =
+          prodRes.status === "rejected"
+            ? prodRes.reason instanceof Error
+              ? prodRes.reason.message
+              : String(prodRes.reason)
+            : prodRes.value.error?.message ||
+              (!(prodData as any)?.success
+                ? (prodData as any)?.message || "No pudimos cargar los productos."
+                : "");
+        setError(productError);
+
         setFromCache(
           [prodRes, anfRes, roomRes, clientRes].some(
             (resultado) =>
@@ -216,14 +227,23 @@ export function useGarzonProductos() {
         }
 
         if (isManual) {
-          showToast({
-            type: hasChanges ? "success" : "info",
-            text1: hasChanges ? "Éxito" : "Información",
-            text2: hasChanges
-              ? "Datos actualizados"
-              : "Sin cambios en los datos",
-            visibilityTime: 3000,
-          });
+          showToast(
+            productError
+              ? {
+                  type: "error",
+                  text1: "Error",
+                  text2: "No se pudo actualizar la lista de productos",
+                  visibilityTime: 3000,
+                }
+              : {
+                  type: hasChanges ? "success" : "info",
+                  text1: hasChanges ? "Éxito" : "Información",
+                  text2: hasChanges
+                    ? "Datos actualizados"
+                    : "Sin cambios en los datos",
+                  visibilityTime: 3000,
+                },
+          );
         }
       } catch (err: any) {
         if (signal?.aborted) return;

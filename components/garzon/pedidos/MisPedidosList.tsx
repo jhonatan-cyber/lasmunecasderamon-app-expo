@@ -1,9 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-/**
- * Historial de pedidos del garzón. Actualmente no tiene ningún punto de entrada
- * en la app (no se importa desde ninguna ruta): se conserva por si se conecta
- * más adelante, no se elimina durante la unificación de componentes.
- */
+/** Historial de pedidos del usuario autenticado. */
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -43,7 +39,7 @@ const SORT_OPTIONS: { key: SortBy; label: string; icon: keyof typeof Ionicons.gl
 ];
 
 /**
- * Historial de pedidos del garzón. Replica el listado del dashboard: resumen
+ * Historial de pedidos propios: resumen
  * por estado, búsqueda, filtro de estado, ordenamiento y detalle del pedido.
  */
 export function MisPedidosList({ onNuevoPedido }: MisPedidosListProps) {
@@ -67,7 +63,7 @@ export function MisPedidosList({ onNuevoPedido }: MisPedidosListProps) {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [sortBy, setSortBy] = useState<SortBy>('total');
+  const [sortBy, setSortBy] = useState<SortBy>('fecha_crea');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [sortSheetVisible, setSortSheetVisible] = useState(false);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
@@ -125,6 +121,20 @@ export function MisPedidosList({ onNuevoPedido }: MisPedidosListProps) {
     },
   }));
 
+  const sortDirectionLabel =
+    sortBy === 'fecha_crea'
+      ? sortOrder === 'asc'
+        ? 'Más antiguos primero'
+        : 'Más recientes primero'
+      : sortBy === 'total'
+        ? sortOrder === 'asc'
+          ? 'Menor a mayor'
+          : 'Mayor a menor'
+        : sortOrder === 'asc'
+          ? 'A a Z'
+          : 'Z a A';
+  const hasActiveFilters = search.trim().length > 0 || statusFilter !== 'all';
+
   return (
     <View style={styles.container}>
       <View style={styles.searchRow}>
@@ -144,11 +154,11 @@ export function MisPedidosList({ onNuevoPedido }: MisPedidosListProps) {
             styles.iconBtn,
             {
               backgroundColor:
-                sortBy !== 'total' || sortOrder !== 'desc'
+                sortBy !== 'fecha_crea' || sortOrder !== 'desc'
                   ? `${accentColor}18`
                   : cardBg,
               borderColor:
-                sortBy !== 'total' || sortOrder !== 'desc'
+                sortBy !== 'fecha_crea' || sortOrder !== 'desc'
                   ? accentColor
                   : borderColor,
             },
@@ -232,17 +242,24 @@ export function MisPedidosList({ onNuevoPedido }: MisPedidosListProps) {
             <EmptyState
               icon="receipt-outline"
               title={
-                search || statusFilter !== 'all'
+                hasActiveFilters
                   ? 'No se encontraron pedidos'
                   : 'Todavía no tienes pedidos'
               }
               message={
-                search || statusFilter !== 'all'
+                hasActiveFilters
                   ? 'Prueba con otro cliente, código o estado.'
                   : 'Crea el primero desde el catálogo.'
               }
-              actionLabel="Nuevo pedido"
-              onAction={onNuevoPedido}
+              actionLabel={hasActiveFilters ? 'Limpiar búsqueda y filtros' : 'Nuevo pedido'}
+              onAction={
+                hasActiveFilters
+                  ? () => {
+                      setSearch('');
+                      setStatusFilter('all');
+                    }
+                  : onNuevoPedido
+              }
             />
           }
         />
@@ -252,11 +269,7 @@ export function MisPedidosList({ onNuevoPedido }: MisPedidosListProps) {
         visible={sortSheetVisible}
         onClose={() => setSortSheetVisible(false)}
         title="Ordenar pedidos"
-        subtitle={
-          sortOrder === 'asc'
-            ? 'Menor a mayor · toca la flecha para invertir'
-            : 'Mayor a menor · toca la flecha para invertir'
-        }
+        subtitle={`${sortDirectionLabel} · toca la flecha para invertir`}
         items={sortItems}
       />
 
