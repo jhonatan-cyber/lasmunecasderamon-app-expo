@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
         minHeight: 52,
         paddingVertical: 14,
         paddingHorizontal: 12,
-        borderRadius: BorderRadius.card,
+        borderRadius: BorderRadius.full,
         borderWidth: 1.5,
     },
     methodChip: {
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
         minHeight: 44,
         paddingVertical: 10,
         paddingHorizontal: 6,
-        borderRadius: BorderRadius.card,
+        borderRadius: BorderRadius.full,
         borderWidth: 1,
     },
     methodText: {

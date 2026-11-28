@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from "@/hooks/useAccentColor";
-import { isExpensiveDrink, getHostessLimit } from "@/hooks/utils/cuentaUtils";
+import { getHostessLimit } from "@/hooks/utils/cuentaUtils";
 import {
   bottleMixerUnits,
   hostessMixerMl,
@@ -20,6 +20,7 @@ import { OrderProductPhoto } from "./OrderProductPhoto";
 import { ShotMixerSelector, type ShortMixer } from "./ShotMixerSelector";
 import { OrderLineInfo } from "@/components/garzon/productos/OrderLineInfo";
 import { GarzonProductConfigModal } from "@/components/garzon/productos/GarzonProductConfigModal";
+import { HostessAssignmentSelector } from "@/components/garzon/productos/HostessAssignmentSelector";
 import { useCartStore } from "@/store/cartStore";
 import { haptic } from "@/utils/haptics";
 import { FontFamily } from "@/constants/fonts";
@@ -69,6 +70,7 @@ export const ProductCard = React.memo(
     const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark, accentText} =
       useAccentColor();
     const [open, setOpen] = useState(false);
+    const [variantsExpanded, setVariantsExpanded] = useState(false);
     const [selectedVariantId, setSelectedVariantId] = useState(product.id);
     const availableVariants = saleVariants?.length ? saleVariants : [product];
     const selectedVariant =
@@ -81,6 +83,9 @@ export const ProductCard = React.memo(
       cart.map((item) => [item.product.id, item]),
     );
     const storeCartItem = cartItemsByVariantId.get(selectedVariant.id);
+    const getVariantQuantity = (variant: Product) =>
+      cartItemsByVariantId.get(variant.id)?.quantity ??
+      (cartItem?.product.id === variant.id ? cartItem.quantity : 0);
     // Guardar referencia al cartItem anterior para detectar cuando se limpia
     const prevCartRef = React.useRef({
       productId: selectedVariant.id,
@@ -95,19 +100,18 @@ export const ProductCard = React.memo(
     const prevCartLengthRef = React.useRef(cart.length);
     const cartWasCleared = cart.length === 0 && prevCartLengthRef.current > 0;
     prevCartLengthRef.current = cart.length;
-    // Cerrar el modal y limpiar selecciones cuando se limpie el carrito.
-    // Siempre se limpian los pending mixers y localQty, independientemente
-    // de si el modal está abierto, para que al volver a abrir esté limpio.
+    // Limpiar selecciones al vaciar el carrito o quitar la modalidad activa.
+    // En grupos, mantener abierto el modal para continuar agregando opciones.
     useEffect(() => {
       if (cartWasCleared || wasCleared) {
         setLocalQty(0);
         setPendingShortMixers([]);
         setPendingBottleMixers(undefined);
-        if (open) {
+        if (open && availableVariants.length === 1) {
           setOpen(false);
         }
       }
-    }, [cartWasCleared, wasCleared, open]);
+    }, [availableVariants.length, cartWasCleared, wasCleared, open]);
     // Usar el item del store si está disponible, sino la prop (para compatibilidad).
     // Si se detectó que se limpió, forzar un cartItem vacío para borrar selecciones.
     const effectiveCartItem = wasCleared
@@ -131,6 +135,17 @@ export const ProductCard = React.memo(
       AcompanamientoBotellaItem[] | undefined
     >();
     const isShort = selectedProduct.tipo_venta === "shot";
+    const reservedBottleStock = cart
+      .filter(
+        (item) =>
+          item.product.presentacion_id === selectedProduct.presentacion_id &&
+          item.product.tipo_venta !== "shot",
+      )
+      .reduce((sum, item) => sum + item.quantity, 0);
+    const canIncreaseQuantity = isShort
+      ? selectedQty < 99
+      : selectedProduct.stock_bar == null ||
+        reservedBottleStock + localQty < Number(selectedProduct.stock_bar);
     // Bebida actual de cada unidad que ya está en el carrito. Los items
     // antiguos guardaban una sola bebida para toda la línea.
     const currentShortMixers: (ShortMixer | undefined)[] = Array.from(
@@ -166,23 +181,16 @@ export const ProductCard = React.memo(
       selectedProduct.tipo_venta === "shot" &&
       Boolean(selectedProduct.shot_anfitriona) &&
       hostessMixerMl(selectedProduct) <= 0;
-    const handleOpen = () => {
+    const handleOpen = (variant?: Product) => {
       const variantInCart = availableVariants.find(
         (variant) => (cartItemsByVariantId.get(variant.id)?.quantity ?? 0) > 0,
       );
-      if (variantInCart) setSelectedVariantId(variantInCart.id);
+      setSelectedVariantId(variant?.id ?? variantInCart?.id ?? availableVariants[0].id);
       haptic.tap();
       setLocalQty(0);
       setPendingShortMixers([]);
       setPendingBottleMixers(undefined);
       setOpen(true);
-    };
-    const handleSelectSaleVariant = (variant: Product) => {
-      if (variant.id === selectedVariant.id) return;
-      setSelectedVariantId(variant.id);
-      setLocalQty(0);
-      setPendingShortMixers([]);
-      setPendingBottleMixers(undefined);
     };
     // Garantizar que al abrir el modal, las selecciones pendientes estén limpias
     // incluso si el carrito se vaciÃ³ mientras el modal estaba cerrado.
@@ -226,7 +234,7 @@ export const ProductCard = React.memo(
           .updateItemBottleMixers(selectedProduct.id, pendingBottleMixers);
     };
 
-    // Si el usuario configura anfitriona/habitación antes de pulsar "Listo",
+    // Si el usuario configura anfitriona/habitación antes de pulsar "Agregar",
     // las unidades del contador deben existir en el carrito para que el
     // selector del garzón pueda asignarlas. Se materializan en ese momento y
     // se conservan sus acompañamientos pendientes.
@@ -250,45 +258,20 @@ export const ProductCard = React.memo(
 
     const canConfigure = selectedQty > 0;
     const hostessSelector = hasCommission ? (
-      <Pressable
+      <HostessAssignmentSelector
+        hostesses={anfitrionas}
+        selectedIds={quantity > 0 ? effectiveCartItem?.selectedHostesses ?? [] : []}
+        max={hostessLimit}
         onPress={() => handleConfigure("hostess")}
         disabled={!canConfigure}
-        style={{
-          padding: 12,
-          borderColor,
-          borderWidth: 1,
-          borderRadius: BorderRadius.card,
-          opacity: canConfigure ? 1 : 0.5,
-        }}
-      >
-        {quantity > 0 && effectiveCartItem?.selectedHostesses && effectiveCartItem.selectedHostesses.length > 0 ? (
-          <View style={{ gap: 6 }}>
-            <Text style={{ color: textSecondary, fontSize: 12, fontFamily: FontFamily.medium }}>
-              {effectiveCartItem.selectedHostesses.length} de {hostessLimit} seleccionada(s)
-            </Text>
-            <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
-              {effectiveCartItem.selectedHostesses.map((hostessId) => {
-                const hostess = anfitrionas.find((a) => a.id === hostessId);
-                return (
-                  <View key={hostessId} style={{ backgroundColor: accentOnSurface + '18', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                    <Text style={{ color: accentOnSurface, fontFamily: FontFamily.medium, fontSize: 13 }}>
-                      {hostess?.nick || hostessId}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        ) : (
-          <Text style={{ color: textPrimary, fontFamily: FontFamily.medium }}>
-            {quantity > 0
-              ? `Cambiar anfitrionas (máx ${hostessLimit})`
-              : canConfigure
-                ? `Seleccionar anfitriona(s) (máx ${hostessLimit})`
-                : `Seleccionar anfitriona (máx ${hostessLimitPerUnit})`}
-          </Text>
-        )}
-      </Pressable>
+        emptyLabel={
+          quantity > 0
+            ? `Cambiar anfitrionas (máx ${hostessLimit})`
+            : canConfigure
+              ? `Seleccionar anfitriona(s) (máx ${hostessLimit})`
+              : `Seleccionar anfitriona (máx ${hostessLimitPerUnit})`
+        }
+      />
     ) : null;
 
     const handleAgregar = () => {
@@ -318,129 +301,221 @@ export const ProductCard = React.memo(
       borderColor: accentColor,
       borderWidth: 1.5,
     } : {};
-
-    return (
+    const productHeader = (
       <>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Configurar ${product.name}`}
-          onPress={() => handleOpen()}
-          style={{
-            flexDirection: layout === 'grid' ? 'column' : 'row',
-            gap: 12,
-            alignItems: layout === 'grid' ? 'stretch' : 'center',
-            backgroundColor: cardBg,
-            borderColor,
-            borderWidth: 1,
-            borderRadius: BorderRadius.card,
-            padding: layout === 'grid' ? 12 : 16,
-            marginBottom: 12,
-            flex: layout === 'grid' ? 1 : undefined,
-            minHeight: layout === 'grid' ? 176 : undefined,
-            ...cardNeonGlow,
-          }}
-        >
-          {layout === 'grid' ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <OrderProductPhoto foto={product.foto} name={product.name} />
-              <Ionicons name="chevron-forward" size={20} color={accentOnSurface} />
-            </View>
-          ) : (
+        {layout === 'grid' ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <OrderProductPhoto foto={product.foto} name={product.name} />
-          )}
-          <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-            {!!product.categoria && (
-              <Text
-                style={{ color: textSecondary, fontSize: 11 }}
-                numberOfLines={1}
-              >
-                {product.categoria}
-              </Text>
+            {availableVariants.length > 1 && (
+              <Ionicons
+                name={variantsExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={accentOnSurface}
+              />
             )}
-            <Text
-              style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}
-              numberOfLines={2}
-            >
-              {product.producto_nombre || product.name}
-            </Text>
-            {!!product.presentacion_nombre && (
-              <Text style={{ color: textSecondary }} numberOfLines={1}>
-                {product.presentacion_nombre}
-              </Text>
-            )}
-            {availableVariants.length > 1 ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                {availableVariants.map((variant) => {
-                  const variantQuantity =
-                    cartItemsByVariantId.get(variant.id)?.quantity ??
-                    (cartItem?.product.id === variant.id ? cartItem.quantity : 0);
-                  return (
-                    <View
-                      key={variant.id}
-                      style={{
-                        backgroundColor: accentOnSurface + "18",
-                        borderRadius: BorderRadius.full,
-                        paddingHorizontal: 8,
-                        paddingVertical: 5,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: accentOnSurface,
-                          fontFamily: FontFamily.bold,
-                          fontSize: 10,
-                        }}
-                      >
-                        {getSaleTypeLabel(variant)}
-                      </Text>
-                      <Text style={{ color: accentOnSurface, fontSize: 10 }}>
-                        {formatCurrency(variant.price)}
-                        {variantQuantity > 0 ? ` · ${variantQuantity} en pedido` : ""}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            ) : (
-              <View
-                style={{
-                  alignSelf: "flex-start",
-                  backgroundColor: accentOnSurface + "18",
-                  borderRadius: BorderRadius.full,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                }}
-              >
-                <Text
+          </View>
+        ) : (
+          <OrderProductPhoto foto={product.foto} name={product.name} />
+        )}
+        <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+          {availableVariants.length === 1 ? (
+            <View style={{ alignSelf: "flex-start", gap: 4 }}>
+              {!!product.categoria && (
+                <View
                   style={{
-                    color: accentOnSurface,
-                    fontFamily: FontFamily.bold,
-                    fontSize: 10,
+                    alignSelf: "flex-start",
+                    backgroundColor: accentOnSurface + "18",
+                    borderRadius: BorderRadius.full,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
                   }}
                 >
-                  {saleTypeLabel}
-                </Text>
-              </View>
-            )}
-            {availableVariants.length === 1 && quantity > 0 && (
-              <Text style={{ color: textSecondary }} numberOfLines={1}>
-                {quantity} en pedido
-              </Text>
-            )}
-            {availableVariants.length === 1 && (
+                  <Text
+                    style={{
+                      color: accentOnSurface,
+                      fontFamily: FontFamily.bold,
+                      fontSize: 10,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {product.categoria}
+                  </Text>
+                </View>
+              )}
+              {!!product.presentacion_nombre && (
+                <View
+                  style={{
+                    alignSelf: "flex-start",
+                    borderColor: accentOnSurface + "40",
+                    borderRadius: BorderRadius.full,
+                    borderWidth: 1,
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: accentOnSurface,
+                      fontFamily: FontFamily.semibold,
+                      fontSize: 10,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {product.presentacion_nombre}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : !!product.categoria ? (
+            <Text
+              style={{ color: textSecondary, fontSize: 11 }}
+              numberOfLines={1}
+            >
+              {product.categoria}
+            </Text>
+          ) : null}
+          <Text
+            style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}
+            numberOfLines={2}
+          >
+            {product.producto_nombre || product.name}
+          </Text>
+          {availableVariants.length > 1 && !!product.presentacion_nombre && (
+            <Text style={{ color: textSecondary }} numberOfLines={1}>
+              {product.presentacion_nombre}
+            </Text>
+          )}
+          {availableVariants.length === 1 && (
+            <View
+              style={{
+                alignSelf: "flex-start",
+                backgroundColor: accentOnSurface + "18",
+                borderRadius: BorderRadius.full,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+              }}
+            >
               <Text
                 style={{
                   color: accentOnSurface,
                   fontFamily: FontFamily.bold,
-                  fontSize: 15,
+                  fontSize: 10,
                 }}
               >
-                {formatCurrency(product.price)}
+                {saleTypeLabel}
               </Text>
+            </View>
+          )}
+          {availableVariants.length === 1 && quantity > 0 && (
+            <Text style={{ color: textSecondary }} numberOfLines={1}>
+              {quantity} en pedido
+            </Text>
+          )}
+          {availableVariants.length === 1 && (
+            <Text
+              style={{
+                color: accentOnSurface,
+                fontFamily: FontFamily.bold,
+                fontSize: 15,
+              }}
+            >
+              {formatCurrency(product.price)}
+            </Text>
+          )}
+        </View>
+        {layout === 'list' && availableVariants.length > 1 && (
+          <Ionicons
+            name={variantsExpanded ? "chevron-up" : "chevron-down"}
+            size={20}
+            color={accentOnSurface}
+          />
+        )}
+      </>
+    );
+    const productHeaderStyle = {
+      flexDirection: layout === 'grid' ? 'column' as const : 'row' as const,
+      gap: 12,
+      alignItems: layout === 'grid' ? 'stretch' as const : 'center' as const,
+      padding: layout === 'grid' ? 12 : 16,
+    };
+    const productCardStyle = {
+      backgroundColor: cardBg,
+      borderColor,
+      borderWidth: 1,
+      borderRadius: BorderRadius.card,
+      marginBottom: 12,
+      flex: layout === 'grid' ? 1 : undefined,
+      minHeight: layout === 'grid' ? 176 : undefined,
+      overflow: "hidden" as const,
+      ...cardNeonGlow,
+    };
+
+    return (
+      <>
+        {availableVariants.length === 1 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Configurar ${product.name}`}
+            onPress={() => handleOpen()}
+            style={[productCardStyle, productHeaderStyle]}
+          >
+            {productHeader}
+          </Pressable>
+        ) : (
+          <View style={productCardStyle}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${variantsExpanded ? "Contraer" : "Expandir"} opciones de venta de ${product.name}`}
+              accessibilityState={{ expanded: variantsExpanded }}
+              onPress={() => setVariantsExpanded((expanded) => !expanded)}
+              style={productHeaderStyle}
+            >
+              {productHeader}
+            </Pressable>
+            {variantsExpanded && (
+              <View style={{ paddingHorizontal: 16, paddingBottom: 16, gap: 8 }}>
+                {availableVariants.map((variant) => {
+                  const variantQuantity = getVariantQuantity(variant);
+                  return (
+                    <Pressable
+                      key={variant.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Abrir ${getSaleTypeLabel(variant)} · ${formatCurrency(variant.price)}`}
+                      onPress={() => handleOpen(variant)}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        minHeight: 48,
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: BorderRadius.card,
+                        borderWidth: 1,
+                        borderColor,
+                        backgroundColor: accentOnSurface + "08",
+                      }}
+                    >
+                      <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                        <Text
+                          style={{ color: textPrimary, fontFamily: FontFamily.bold }}
+                          numberOfLines={1}
+                        >
+                          {getSaleTypeLabel(variant)}
+                        </Text>
+                        <Text style={{ color: textSecondary, fontSize: 12 }}>
+                          {formatCurrency(variant.price)}
+                          {variantQuantity > 0 ? ` · ${variantQuantity} en pedido` : ""}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color={accentOnSurface} />
+                    </Pressable>
+                  );
+                })}
+              </View>
             )}
           </View>
-          {layout === 'list' && <Ionicons name="chevron-forward" size={20} color={accentOnSurface} />}
-        </Pressable>
+        )}
         <Modal
           visible={open}
           transparent
@@ -492,47 +567,6 @@ export const ProductCard = React.memo(
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
               >
-                {availableVariants.length > 1 && (
-                  <View style={{ gap: 8 }}>
-                    <Text style={{ color: textPrimary, fontFamily: FontFamily.bold }}>
-                      Modalidad de venta
-                    </Text>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                      {availableVariants.map((variant) => {
-                        const isSelected = variant.id === selectedProduct.id;
-                        return (
-                          <Pressable
-                            key={variant.id}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Seleccionar ${getSaleTypeLabel(variant)}`}
-                            accessibilityState={{ selected: isSelected }}
-                            onPress={() => handleSelectSaleVariant(variant)}
-                            style={{
-                              paddingHorizontal: 12,
-                              paddingVertical: 10,
-                              borderRadius: BorderRadius.full,
-                              borderWidth: 1,
-                              borderColor: isSelected ? accentOnSurface : borderColor,
-                              backgroundColor: isSelected
-                                ? accentOnSurface + "18"
-                                : cardBg,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: isSelected ? accentOnSurface : textPrimary,
-                                fontFamily: FontFamily.bold,
-                                fontSize: 12,
-                              }}
-                            >
-                              {getSaleTypeLabel(variant)} · {formatCurrency(variant.price)}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  </View>
-                )}
                 <OrderLineInfo
                   item={
                     effectiveCartItem || {
@@ -579,12 +613,23 @@ export const ProductCard = React.memo(
                     </Text>
                     <Pressable
                       accessibilityLabel={`Aumentar ${selectedProduct.name}`}
+                      accessibilityHint={
+                        canIncreaseQuantity ? undefined : "No hay más stock disponible"
+                      }
+                      disabled={!canIncreaseQuantity}
                       onPress={() => {
                         haptic.tap();
                         setLocalQty((q) => q + 1);
                       }}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      style={{ padding: 6, minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+                      style={{
+                        padding: 6,
+                        minWidth: 44,
+                        minHeight: 44,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        opacity: canIncreaseQuantity ? 1 : 0.45,
+                      }}
                     >
                       <Ionicons name="add-circle" size={32} color={accentOnSurface} />
                     </Pressable>
@@ -622,38 +667,6 @@ export const ProductCard = React.memo(
                   </View>
                 </View>
                 {!isShort && hostessSelector}
-                {hasCommission &&
-                  selectedProduct.tipo_venta !== "shot" &&
-                  isExpensiveDrink(selectedProduct) && (
-                    <Pressable
-                      onPress={() => handleConfigure("room")}
-                      disabled={!canConfigure}
-                      style={{
-                        padding: 12,
-                        borderColor,
-                        borderWidth: 1,
-                        borderRadius: BorderRadius.card,
-                        opacity: canConfigure ? 1 : 0.5,
-                      }}
-                    >
-                      {quantity > 0 && effectiveCartItem?.selectedRoom ? (
-                        <View style={{ gap: 6 }}>
-                          <Text style={{ color: textSecondary, fontSize: 12, fontFamily: FontFamily.medium }}>
-                            Habitación seleccionada
-                          </Text>
-                          <View style={{ backgroundColor: accentOnSurface + '18', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                            <Text style={{ color: accentOnSurface, fontFamily: FontFamily.medium, fontSize: 13 }}>
-                              {rooms.find((r) => r.id === effectiveCartItem.selectedRoom)?.name || effectiveCartItem.selectedRoom}
-                            </Text>
-                          </View>
-                        </View>
-                      ) : (
-                        <Text style={{ color: textPrimary, fontFamily: FontFamily.medium }}>
-                          {quantity > 0 ? "Cambiar habitación" : "Seleccionar habitación"}
-                        </Text>
-                      )}
-                    </Pressable>
-                  )}
                 {missingHostessMixerMl && (
                   <View
                     style={{
@@ -752,9 +765,7 @@ export const ProductCard = React.memo(
                   }}
                 >
                   $
-                  {(() => {
-                    return (selectedProduct.price * selectedQty).toLocaleString("es-CL");
-                  })()}
+                  {(selectedProduct.price * selectedQty).toLocaleString("es-CL")}
                 </Text>
               </View>
               <Pressable
@@ -763,8 +774,8 @@ export const ProductCard = React.memo(
                 style={{
                   backgroundColor: accentColor,
                   padding: 14,
-                  borderRadius: 14,
-                  opacity: selectedQty === 0 ? 0.5 : 1,
+                  borderRadius: BorderRadius.full,
+                  opacity: selectedQty > 0 ? 1 : 0.5,
                 }}
               >
                 <Text
@@ -777,34 +788,7 @@ export const ProductCard = React.memo(
                 >
                   {localQty > 0
                     ? (quantity > 0 ? `Agregar +${localQty} al pedido` : `Agregar ${localQty} al pedido`)
-                    : (quantity > 0 ? `Listo (${quantity} en pedido)` : "Listo")}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  haptic.tap();
-                  setLocalQty(0);
-                  clearPendingMixers();
-                  onConfigClose?.();
-                  setOpen(false);
-                }}
-                style={{
-                  backgroundColor: 'transparent',
-                  padding: 14,
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  borderColor: textSecondary,
-                }}
-              >
-                <Text
-                  style={{
-                    color: textSecondary,
-                    textAlign: "center",
-                    fontFamily: FontFamily.bold,
-                    fontSize: 16,
-                  }}
-                >
-                  Cancelar
+                    : "Agregar"}
                 </Text>
               </Pressable>
             </View>

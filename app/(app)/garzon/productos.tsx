@@ -20,7 +20,6 @@ import VirtualizedList from "@/components/shared/VirtualizedList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
-import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { EmployeeListError } from "@/components/shared/EmployeeListError";
@@ -71,16 +70,9 @@ export default function ProductosScreen() {
     clients,
     selectedClientId,
     setSelectedClientId,
-    metodoPago,
-    setMetodoPago,
-    baucherFoto,
-    baucherPromptVisible,
-    setBaucherPromptVisible,
-    takeBaucherPhoto,
     loading,
     refreshing,
     error,
-    submitting,
     fromCache,
     clientModalVisible,
     setClientModalVisible,
@@ -91,14 +83,9 @@ export default function ProductosScreen() {
     cart,
     addToCart,
     removeFromCart,
-    tipEnabled,
-    setTipEnabled,
     clearCart,
-    tipAmount,
     cartTotal,
-    propinaPct,
     onRefresh,
-    submitOrder,
   } = useGarzonProductos();
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const selectedClient = clients.find(
@@ -139,6 +126,14 @@ export default function ProductosScreen() {
     () => groupProductsByPresentation(products),
     [products],
   );
+  const requestedProductIds =
+    requestedConfigItem?.type === "room"
+      ? productGroups.find((group) =>
+          group.variants.some(
+            (variant) => variant.id === requestedConfigItem.productId,
+          ),
+        )?.variants.map((variant) => variant.id)
+      : undefined;
   const filteredProductGroups = React.useMemo(() => {
     const search = searchText.trim().toLocaleLowerCase();
     if (!search) return productGroups;
@@ -374,18 +369,8 @@ export default function ProductosScreen() {
       {cart.length > 0 && (
         <GarzonCartBar
           itemCount={itemCount}
-          tipEnabled={tipEnabled}
-          setTipEnabled={setTipEnabled}
-          metodoPago={metodoPago}
-          setMetodoPago={setMetodoPago}
-          baucherFoto={baucherFoto}
-          onTakeBaucherPhoto={() => void takeBaucherPhoto()}
           onBarHeightChange={(height) => setCartBarHeight(height)}
-          tipAmount={tipAmount}
-          tipPercentage={propinaPct}
           cartTotal={cartTotal}
-          submitting={submitting}
-          submitOrder={submitOrder}
           onViewCart={() => {
             useCartStore.getState().splitShorts();
             router.push('/(app)/garzon/pedido-detalle');
@@ -414,6 +399,7 @@ export default function ProductosScreen() {
         <GarzonProductConfigModal
           visible={!loading}
           productId={requestedConfigItem.productId}
+          productIds={requestedProductIds}
           type={requestedConfigItem.type}
           hostesses={anfitrionas}
           rooms={rooms}
@@ -427,20 +413,6 @@ export default function ProductosScreen() {
           }
         />
       ) : null}
-      <PremiumAlert
-        visible={baucherPromptVisible}
-        title="Foto del baucher"
-        message="El pago por transferencia requiere la foto del baucher. ¿Tomarla ahora?"
-        type="info"
-        showCancel
-        confirmText="Tomar foto"
-        cancelText="Ahora no"
-        onConfirm={() => {
-          setBaucherPromptVisible(false);
-          void takeBaucherPhoto();
-        }}
-        onCancel={() => setBaucherPromptVisible(false)}
-      />
     </View>
   );
 }

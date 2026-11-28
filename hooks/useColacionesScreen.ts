@@ -13,6 +13,7 @@ interface LimpioTrabajador {
   lastName: string;
   nick?: string;
   role?: string;
+  roleId?: string;
 }
 
 function parseTrabajador(data: any[]): LimpioTrabajador[] {
@@ -33,6 +34,7 @@ function parseTrabajador(data: any[]): LimpioTrabajador[] {
           lastName: String(u.lastName ?? u.apellido ?? ''),
           nick: u.nick ? String(u.nick) : undefined,
           role: u.role ? String(u.role) : undefined,
+          roleId: u.rol_id != null ? String(u.rol_id) : undefined,
         }))
     : [];
 }

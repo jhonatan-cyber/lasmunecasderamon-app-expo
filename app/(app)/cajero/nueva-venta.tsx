@@ -99,6 +99,7 @@ export default function NuevaVentaScreen() {
     state.cart,
     (saved) => dispatch({ type: "SET_CART", payload: saved }),
   );
+  const [reviewingSale, setReviewingSale] = useState(false);
 
   const {
     loadingInitial,
@@ -131,17 +132,28 @@ export default function NuevaVentaScreen() {
     loadSubmitting,
     loadMetodoPago,
   } = state;
+  const cartItemCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  const setSaleFlowStep = (review: boolean) => {
+    setReviewingSale(review);
+    requestAnimationFrame(() =>
+      scrollRef.current?.scrollTo({ y: 0, animated: true }),
+    );
+  };
 
   // La guardia cubre header, gesto y back físico. Mientras se envía la venta
   // no se bloquea la navegación: el propio submit limpia el carrito y navega.
   const { discardPromptVisible, confirmDiscard, cancelDiscard } = useCartExitGuard({
     enabled: cart.length > 0 && !submitting,
+    onStepBack: () => {
+      if (!reviewingSale) return false;
+      setSaleFlowStep(false);
+      return true;
+    },
     onDiscard: () => {
       clearDraft();
       dispatch({ type: "SET_CART", payload: [] });
     },
   });
-  const cartItemCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   // Los cards de bebidas solo aparecen cuando alguna línea del carrito realmente
   // lleva acompañamiento (según la presentación elegida). Un producto sin
@@ -221,16 +233,20 @@ export default function NuevaVentaScreen() {
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <PremiumHeader
-        title="Nueva Venta"
+        title={reviewingSale ? "Detalle de la venta" : "Nueva Venta"}
         subtitle={
-          fromCache
-            ? "Datos guardados en el dispositivo"
-            : "Registrar productos y servicios"
+          reviewingSale
+            ? "Revisa los productos, asignaciones y método de pago"
+            : fromCache
+              ? "Datos guardados en el dispositivo"
+              : "Selecciona productos y modalidades de venta"
         }
         connectionStatus={
           fromCache ? { isConnected: false, label: "Modo Offline" } : undefined
         }
-        onBack={() => router.back()}
+        onBack={() =>
+          reviewingSale ? setSaleFlowStep(false) : router.back()
+        }
       />
       <OfflineStatusBanner
         pendientesHref={"/(app)/cajero/pendientes" as never}
@@ -254,98 +270,105 @@ export default function NuevaVentaScreen() {
       >
         {cajaAbierta === false && <CajaClosedBanner />}
 
-        <ContextualHelp
-          title="la nueva venta"
-          steps={[
-            {
-              title: "Agrega productos",
-              description: "Elige una categoría o busca el producto; selecciona su presentación y cantidad para añadirlo al carrito.",
-            },
-            {
-              title: "Completa los detalles",
-              description: "Asigna cliente, habitación o anfitriona cuando corresponda y revisa los datos de la venta.",
-            },
-            {
-              title: "Revisa y cobra",
-              description: "Confirma el carrito y el método de pago. Si es transferencia, adjunta el comprobante antes de registrar la venta.",
-            },
-          ]}
-        />
+        {!reviewingSale && (
+          <ContextualHelp
+            title="la nueva venta"
+            steps={[
+              {
+                title: "Agrega productos",
+                description: "Elige una categoría o busca el producto; selecciona su presentación y cantidad para añadirlo al carrito.",
+              },
+              {
+                title: "Completa los detalles",
+                description: "Asigna cliente, habitación o anfitriona cuando corresponda y revisa los datos de la venta.",
+              },
+              {
+                title: "Revisa y cobra",
+                description: "Confirma el carrito y el método de pago. Si es transferencia, adjunta el comprobante antes de registrar la venta.",
+              },
+            ]}
+          />
+        )}
 
-        <NuevaVentaSearch
-          searchProducto={searchProducto}
-          onSearchChange={setSearchProducto}
-          onSearchNow={handleSearchNow}
-          onClearSearch={handleClearSearch}
-          searchLoading={searchLoading}
-          searchResults={searchResults}
-          cart={cart}
-          onAddProduct={handlePressAddProduct}
-          onRemoveFromCart={(item, choice) => {
-            const productId = String(item.id || item.id_producto);
-            const choiceIsShot = choice === "shot" || choice === "shot_anfitriona";
-            const choiceAnfitriona = choice === "shot_anfitriona";
-            const idx = cart.findIndex((ci) => {
-              const ciProductId = String(ci.id || ci.id_producto || ci.producto_id || "");
-              if (ciProductId !== productId) return false;
-              const ciTipo = ci.tipo_venta || "botella";
-              if (choiceIsShot && ciTipo === "shot") {
-                return (ci.shot_anfitriona ?? false) === choiceAnfitriona;
+        {!reviewingSale && (
+          <NuevaVentaSearch
+            searchProducto={searchProducto}
+            onSearchChange={setSearchProducto}
+            onSearchNow={handleSearchNow}
+            onClearSearch={handleClearSearch}
+            searchLoading={searchLoading}
+            searchResults={searchResults}
+            cart={cart}
+            onAddProduct={handlePressAddProduct}
+            onRemoveFromCart={(item, choice) => {
+              const productId = String(item.id || item.id_producto);
+              const choiceIsShot = choice === "shot" || choice === "shot_anfitriona";
+              const choiceAnfitriona = choice === "shot_anfitriona";
+              const idx = cart.findIndex((ci) => {
+                const ciProductId = String(ci.id || ci.id_producto || ci.producto_id || "");
+                if (ciProductId !== productId) return false;
+                const ciTipo = ci.tipo_venta || "botella";
+                if (choiceIsShot && ciTipo === "shot") {
+                  return (ci.shot_anfitriona ?? false) === choiceAnfitriona;
+                }
+                if (!choiceIsShot && ciTipo === "botella") {
+                  return (ci.botella_anfitriona ?? true) === (choice !== "botella_sin_anfitriona");
+                }
+                return false;
+              });
+              if (idx >= 0) {
+                removeFromCart(idx);
               }
-              if (!choiceIsShot && ciTipo === "botella") {
-                return (ci.botella_anfitriona ?? true) === (choice !== "botella_sin_anfitriona");
-              }
-              return false;
-            });
-            if (idx >= 0) {
-              removeFromCart(idx);
-            }
-          }}
-          accentColor={accentColor}
-          cardBg={cardBg}
-          textPrimary={textPrimary}
-          textSecondary={textSecondary}
-          borderColor={borderColor}
-        />
+            }}
+            accentColor={accentColor}
+            cardBg={cardBg}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            borderColor={borderColor}
+          />
+        )}
 
         {/* 1. Selección de Categoría - Collapsible */}
-        <CollapsibleSection
-          title="1. Selección de Categoría"
-          collapsed={!sections.categories}
-          onToggle={() => toggleSection("categories")}
-          fontSize={13}
-          fontFamily={FontFamily.black}
-          accentColor={accentColor}
-          accentOnSurface={accentOnSurface}
-          textPrimary={textPrimary}
-          borderColor={borderColor}
-          cardBg={cardBg}
-          contentStyle={{ paddingBottom: 14 }}
-        >
-          <CategoryGrid
-            categories={categories}
-            onSelect={handleOpenCategory}
+        {!reviewingSale && (
+          <CollapsibleSection
+            title="1. Selección de Categoría"
+            collapsed={!sections.categories}
+            onToggle={() => toggleSection("categories")}
+            fontSize={13}
+            fontFamily={FontFamily.black}
             accentColor={accentColor}
+            accentOnSurface={accentOnSurface}
             textPrimary={textPrimary}
             borderColor={borderColor}
             cardBg={cardBg}
-          />
-        </CollapsibleSection>
+            contentStyle={{ paddingBottom: 14 }}
+          >
+            <CategoryGrid
+              categories={categories}
+              onSelect={handleOpenCategory}
+              accentColor={accentColor}
+              textPrimary={textPrimary}
+              borderColor={borderColor}
+              cardBg={cardBg}
+            />
+          </CollapsibleSection>
+        )}
 
         {/* 2. Detalles de la Venta - Collapsible */}
-        <CollapsibleSection
-          title="2. Detalles de la Venta"
-          collapsed={!sections.detalles}
-          onToggle={() => toggleSection("detalles")}
-          fontSize={isTablet ? 16 : 13}
-          borderRadius={borderRadius}
-          padding={spacing}
-          accentColor={accentColor}
-          accentOnSurface={accentOnSurface}
-          textPrimary={textPrimary}
-          borderColor={borderColor}
-          cardBg={cardBg}
-        >
+        {reviewingSale && (
+          <CollapsibleSection
+            title="2. Detalles de la Venta"
+            collapsed={!sections.detalles}
+            onToggle={() => toggleSection("detalles")}
+            fontSize={isTablet ? 16 : 13}
+            borderRadius={borderRadius}
+            padding={spacing}
+            accentColor={accentColor}
+            accentOnSurface={accentOnSurface}
+            textPrimary={textPrimary}
+            borderColor={borderColor}
+            cardBg={cardBg}
+          >
           {!!servicioId && (
             <Text style={{ color: textPrimary, padding: 12 }}>
               Venta adicional · {servicioNombre || "Cargando habitación…"}
@@ -465,29 +488,32 @@ export default function NuevaVentaScreen() {
               )}
             </View>
           </Pressable>
-        </CollapsibleSection>
+          </CollapsibleSection>
+        )}
 
         {/* 3. Carrito - Collapsible */}
-        <CollapsibleSection
-          title="3. Carrito"
-          collapsed={!sections.carrito}
-          onToggle={() => toggleSection("carrito")}
-          accentColor={accentColor}
-          accentOnSurface={accentOnSurface}
-          textPrimary={textPrimary}
-          borderColor={borderColor}
-          cardBg={cardBg}
-        >
-          <CartList
-            items={cart as any}
-            onUpdateQuantity={updateQuantity}
-            onRemove={removeFromCart}
-            title={""}
-          />
-        </CollapsibleSection>
+        {reviewingSale && (
+          <CollapsibleSection
+            title="3. Carrito"
+            collapsed={!sections.carrito}
+            onToggle={() => toggleSection("carrito")}
+            accentColor={accentColor}
+            accentOnSurface={accentOnSurface}
+            textPrimary={textPrimary}
+            borderColor={borderColor}
+            cardBg={cardBg}
+          >
+            <CartList
+              items={cart as any}
+              onUpdateQuantity={updateQuantity}
+              onRemove={removeFromCart}
+              title={""}
+            />
+          </CollapsibleSection>
+        )}
 
         {/* Bebidas - Collapsible (solo si la presentación lleva acompañamiento) */}
-        {needsBottleMixer && (
+        {reviewingSale && needsBottleMixer && (
           <CollapsibleSection
             title="Bebidas"
             collapsed={!sections.bebidas}
@@ -518,7 +544,7 @@ export default function NuevaVentaScreen() {
           </CollapsibleSection>
         )}
 
-        {needsShortMixer && (
+        {reviewingSale && needsShortMixer && (
           <CollapsibleSection
             title="Bebida para los cortos"
             collapsed={!sections.soda}
@@ -549,21 +575,22 @@ export default function NuevaVentaScreen() {
         )}
 
         {/* 4. Método de Pago - Collapsible */}
-        <CollapsibleSection
-          title="4. Método de Pago"
-          collapsed={!sections.pago}
-          onToggle={() => toggleSection("pago")}
-          fontSize={isTablet ? 16 : 13}
-          fontFamily={FontFamily.black}
-          borderRadius={borderRadius}
-          padding={spacing}
-          accentColor={accentColor}
-          accentOnSurface={accentOnSurface}
-          textPrimary={textPrimary}
-          borderColor={borderColor}
-          cardBg={cardBg}
-          contentStyle={{ paddingBottom: spacing }}
-        >
+        {reviewingSale && (
+          <CollapsibleSection
+            title="4. Método de Pago"
+            collapsed={!sections.pago}
+            onToggle={() => toggleSection("pago")}
+            fontSize={isTablet ? 16 : 13}
+            fontFamily={FontFamily.black}
+            borderRadius={borderRadius}
+            padding={spacing}
+            accentColor={accentColor}
+            accentOnSurface={accentOnSurface}
+            textPrimary={textPrimary}
+            borderColor={borderColor}
+            cardBg={cardBg}
+            contentStyle={{ paddingBottom: spacing }}
+          >
           <PaymentMethodSelect
             showLabel={false}
             selectedMethod={metodoPago}
@@ -629,9 +656,10 @@ export default function NuevaVentaScreen() {
                 </Pressable>
               </View>
             )}
-        </CollapsibleSection>
+          </CollapsibleSection>
+        )}
 
-        {metodoPago === "transferencia" && (
+        {reviewingSale && metodoPago === "transferencia" && (
           <BaucherCard
             baucherFoto={baucherFoto}
             accentColor={accentColor}
@@ -640,27 +668,29 @@ export default function NuevaVentaScreen() {
           />
         )}
 
-        <PaymentSummaryCard
-          cart={cart}
-          totals={totals}
-          enableTip={enableTip}
-          metodoPago={metodoPago}
-          cajaAbierta={cajaAbierta}
-          baucherFoto={baucherFoto}
-          splitVentaPct={splitVentaPct}
-          splitPropinaPct={splitPropinaPct}
-          cardBg={cardBg}
-          borderColor={borderColor}
-          textPrimary={textPrimary}
-          textSecondary={textSecondary}
-          accentColor={accentColor}
-          spacing={spacing}
-          borderRadius={borderRadius}
-          onToggleTip={(val: boolean) =>
-            dispatch({ type: "SET_ENABLE_TIP", payload: val })
-          }
-          onDispatchCart={dispatch}
-        />
+        {reviewingSale && (
+          <PaymentSummaryCard
+            cart={cart}
+            totals={totals}
+            enableTip={enableTip}
+            metodoPago={metodoPago}
+            cajaAbierta={cajaAbierta}
+            baucherFoto={baucherFoto}
+            splitVentaPct={splitVentaPct}
+            splitPropinaPct={splitPropinaPct}
+            cardBg={cardBg}
+            borderColor={borderColor}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            accentColor={accentColor}
+            spacing={spacing}
+            borderRadius={borderRadius}
+            onToggleTip={(val: boolean) =>
+              dispatch({ type: "SET_ENABLE_TIP", payload: val })
+            }
+            onDispatchCart={dispatch}
+          />
+        )}
       </ScrollView>
 
       {cart.length > 0 && (
@@ -686,6 +716,8 @@ export default function NuevaVentaScreen() {
           accentColor={accentColor}
           bottomInset={insets.bottom}
           scrollRef={scrollRef}
+          step={reviewingSale ? "review" : "catalog"}
+          onReview={() => setSaleFlowStep(true)}
           onSubmit={() => handleSubmit(baucherFoto)}
         />
       )}

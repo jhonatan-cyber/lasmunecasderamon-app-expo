@@ -32,6 +32,11 @@ vi.mock('react-native', () => ({
 }));
 
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
+vi.mock('expo-image', () => ({
+  Image: ({ source, accessibilityLabel }: { source: { uri: string }; accessibilityLabel?: string }) => (
+    <img src={source.uri} alt={accessibilityLabel ?? ''} />
+  ),
+}));
 vi.mock('@/components/ui/ModalBottomSheet', () => ({
   ModalBottomSheet: ({ children }: any) => <div>{children}</div>,
 }));
@@ -51,6 +56,7 @@ const opciones: AcompanamientoOpcion[] = [
     nombre: 'Sprite 1.5 L',
     presentacion_id: 2,
     presentacion_nombre: '1.5 L',
+    producto_foto: 'sprite.png',
     ml: 1200,
     cantidad: 2,
     stock: 10,
@@ -60,6 +66,7 @@ const opciones: AcompanamientoOpcion[] = [
     nombre: 'Coca-Cola 1.5 L',
     presentacion_id: 3,
     presentacion_nombre: '1.5 L',
+    producto_foto: 'coca-cola.png',
     ml: 900,
     cantidad: 2,
     stock: 4,
@@ -80,7 +87,12 @@ describe('ColacionAcompanamientoSelector', () => {
 
     expect(screen.getByLabelText(/Sprite 1\.5 L/)).toBeTruthy();
     expect(screen.getByLabelText(/Coca-Cola 1\.5 L/)).toBeTruthy();
-    expect(screen.getAllByText('1.5 L')).toHaveLength(2);
+    expect(screen.getByText('Sprite 1.5 L')).toBeTruthy();
+    expect(screen.getByText(/1\.200 ml disponibles en botella abierta/)).toBeTruthy();
+    expect(screen.queryByText(/16\.200 ml/)).toBeNull();
+    expect(screen.getByRole('img', { name: 'Sprite 1.5 L' }).getAttribute('src')).toContain(
+      '/api/images/products/sprite.png',
+    );
   });
 
   it('selecciona la bebida pulsada', () => {
@@ -109,10 +121,28 @@ describe('ColacionAcompanamientoSelector', () => {
         onSelect={onSelect}
       />
     );
-    fireEvent.click(screen.getByText('1.5 L'));
+    fireEvent.click(screen.getByText('Sprite 1.5 L'));
 
     fireEvent.click(screen.getByLabelText(/Sprite 1\.5 L/));
     expect(onSelect).toHaveBeenCalledWith('');
+  });
+
+  it('muestra la imagen y el nombre completo del acompañamiento seleccionado', () => {
+    render(
+      <ColacionAcompanamientoSelector
+        acompanamientos={opciones}
+        selectedId="2"
+        loading={false}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Sprite 1.5 L')).toBeTruthy();
+    expect(screen.getByText(/1\.200 ml disponibles en la botella abierta/)).toBeTruthy();
+    expect(screen.queryByText(/16\.200 ml/)).toBeNull();
+    expect(screen.getByRole('img', { name: 'Sprite 1.5 L' }).getAttribute('src')).toContain(
+      '/api/images/products/sprite.png',
+    );
   });
 
   it('avisa cuando no hay bebidas disponibles para acompañar', () => {

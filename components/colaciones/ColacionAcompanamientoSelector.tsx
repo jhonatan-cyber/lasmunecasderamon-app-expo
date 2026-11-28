@@ -1,7 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BASE_URL } from '@/api/base-url';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import type { AcompanamientoOpcion } from '@/services/colaciones';
 
@@ -15,6 +17,11 @@ interface Props {
   /** Ml por unidad de acompañamiento configurado en la transferencia. */
   mlPorUnidad?: number | null;
   onSelect: (id: string) => void;
+}
+
+function productoFotoUrl(foto?: string | null) {
+  const photo = foto && foto !== 'default.png' ? foto : 'default.png';
+  return `${BASE_URL}/api/images/products/${encodeURIComponent(photo)}`;
 }
 
 export const ColacionAcompanamientoSelector: React.FC<Props> = ({
@@ -50,7 +57,9 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
       ? `Se descontarán ${mlATotales} ml`
       : `Se descontarán ${unidadesRequeridas ?? 0} unidades`;
     const mlRest = Number(selectedAcompanamiento.ml ?? 0);
-    const resto = mlRest > 0 ? ` · quedan ${mlRest} ml en botellas abiertas` : '';
+    const resto = mlRest > 0
+      ? ` · quedan ${mlRest.toLocaleString('es-CL')} ml disponibles en la botella abierta`
+      : '';
     return parte + resto + '.';
   }, [selectedAcompanamiento, mlATotales, unidadesRequeridas]);
 
@@ -63,16 +72,29 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
         onPress={() => canOpen && setExpanded(!expanded)}
         style={[styles.selectButton, { borderColor, opacity: canOpen ? 1 : 0.5 }]}
       >
-        <Text
-          style={[
-            styles.selectButtonText,
-            { color: selectedAcompanamiento ? textPrimary : textSecondary },
-          ]}
-        >
-          {selectedAcompanamiento
-            ? `${selectedAcompanamiento.presentacion_nombre || selectedAcompanamiento.nombre}`
-            : 'Selecciona acompañamiento'}
-        </Text>
+        <View style={styles.selectButtonContent}>
+          {selectedAcompanamiento ? (
+            <Image
+              source={{ uri: productoFotoUrl(selectedAcompanamiento.producto_foto) }}
+              style={styles.selectedImage}
+              contentFit="cover"
+              transition={150}
+              cachePolicy="memory-disk"
+              accessibilityLabel={selectedAcompanamiento.nombre}
+            />
+          ) : null}
+          <Text
+            style={[
+              styles.selectButtonText,
+              { color: selectedAcompanamiento ? textPrimary : textSecondary },
+            ]}
+            numberOfLines={1}
+          >
+            {selectedAcompanamiento
+              ? selectedAcompanamiento.nombre
+              : 'Selecciona acompañamiento'}
+          </Text>
+        </View>
         <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={18} color={textSecondary} />
       </Pressable>
 
@@ -85,7 +107,7 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
             return (
               <Pressable
                 key={String(item.id)}
-                accessibilityLabel={`${item.nombre}, stock ${stockBar}${mlAbierto > 0 ? `, ${mlAbierto} ml abiertos` : ''}`}
+                accessibilityLabel={`${item.nombre}, stock ${stockBar} en bar${mlAbierto > 0 ? `, ${mlAbierto.toLocaleString('es-CL')} ml disponibles en botella abierta` : ''}`}
                 onPress={() => handleSelect(String(item.id))}
                 style={[
                   styles.listItem,
@@ -97,13 +119,23 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
                   },
                 ]}
               >
-                <View style={{ flex: 1 }}>
+                <Image
+                  source={{ uri: productoFotoUrl(item.producto_foto) }}
+                  style={styles.listItemImage}
+                  contentFit="cover"
+                  transition={150}
+                  cachePolicy="memory-disk"
+                  accessibilityLabel={item.nombre}
+                />
+                <View style={styles.listItemContent}>
                   <Text style={[styles.listItemName, { color: textPrimary }]}>
-                    {item.presentacion_nombre || item.nombre}
+                    {item.nombre}
                   </Text>
                   <Text style={[styles.listItemMeta, { color: textSecondary }]}>
                     {stockBar} en bar
-                    {mlAbierto > 0 ? ` · ${mlAbierto} ml abiertos` : ''}
+                    {mlAbierto > 0
+                      ? ` · ${mlAbierto.toLocaleString('es-CL')} ml disponibles en botella abierta`
+                      : ''}
                   </Text>
                 </View>
                 {isSelected && (
@@ -153,6 +185,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
+  selectButtonContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minWidth: 0,
+  },
+  selectedImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
   hint: {
     fontSize: 12,
     fontWeight: '500',
@@ -178,6 +222,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: BorderRadius.card,
     gap: 10,
+  },
+  listItemImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+  },
+  listItemContent: {
+    flex: 1,
+    minWidth: 0,
   },
   listItemName: {
     fontSize: 15,

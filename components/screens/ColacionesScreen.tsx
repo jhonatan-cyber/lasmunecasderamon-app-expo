@@ -61,6 +61,7 @@ export default function ColacionesScreen() {
     acompanamientosLoading,
     acompanamientosError,
     registros,
+    recepcionesPorTrabajador,
     registrosLoading,
     registrosError,
     saving,
@@ -146,7 +147,7 @@ export default function ColacionesScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <PremiumHeader
         title="Colaciones"
-        subtitle="Un corto por trabajador durante el turno"
+        subtitle="Colaciones según su rol y turno"
         onBack={() => router.back()}
         showThemeToggle
       />
@@ -361,6 +362,8 @@ export default function ColacionesScreen() {
         onClose={() => setWorkerModalVisible(false)}
         workers={trabajadores}
         selectedId={workerId}
+        receivedCounts={recepcionesPorTrabajador}
+        topesPorRol={rule?.topesPorRol}
         onSelect={(id) => {
           setSelectedWorker(id);
           setWorkerModalVisible(false);

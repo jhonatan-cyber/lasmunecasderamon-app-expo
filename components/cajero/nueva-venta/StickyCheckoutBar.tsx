@@ -5,6 +5,7 @@ import { CheckoutBarShell } from '@/components/ui/CheckoutBarShell';
 
 /** Lo que impide cobrar, para que el botón diga qué falta en vez de un genérico. */
 export type CheckoutMissingReason = 'cash' | 'payment' | 'receipt' | null;
+export type SaleFlowStep = 'catalog' | 'review';
 
 interface StickyCheckoutBarProps {
   cart: any[];
@@ -20,6 +21,8 @@ interface StickyCheckoutBarProps {
   accentColor: string;
   bottomInset: number;
   scrollRef: React.RefObject<any>;
+  step?: SaleFlowStep;
+  onReview?: () => void;
   onSubmit: () => void;
 }
 
@@ -30,10 +33,19 @@ interface StickyCheckoutBarProps {
 export function resolveCheckoutCta(
   isReadyToSubmit: boolean,
   missingReason: CheckoutMissingReason,
+  step: SaleFlowStep = 'review',
 ): { label: string; accessibilityLabel: string; icon: keyof typeof Ionicons.glyphMap } {
+  if (step === 'catalog') {
+    return {
+      label: 'Revisar venta',
+      accessibilityLabel: 'Revisar productos y detalles de la venta',
+      icon: 'receipt-outline',
+    };
+  }
+
   if (isReadyToSubmit) {
     return {
-      label: 'Cobrar',
+      label: 'Generar venta',
       accessibilityLabel: 'Finalizar venta',
       icon: 'checkmark-circle',
     };
@@ -61,7 +73,7 @@ export function resolveCheckoutCta(
   }
 }
 
-/** Barra sticky en la parte inferior con total y botón de cobrar. */
+/** Barra sticky con el total y la acción del paso actual de la venta. */
 export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
   cart,
   totals,
@@ -76,10 +88,12 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
   accentColor,
   bottomInset,
   scrollRef,
+  step = 'review',
+  onReview,
   onSubmit,
 }) => {
   const itemCount = cart.reduce((s, i) => s + (i.quantity || 1), 0);
-  const cta = resolveCheckoutCta(isReadyToSubmit, missingReason);
+  const cta = resolveCheckoutCta(isReadyToSubmit, missingReason, step);
 
   const scrollToEnd = () => {
     haptic.tap();
@@ -91,8 +105,12 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
       itemCount={itemCount}
       totalLabel="ítem"
       total={`$${totals.total.toLocaleString()}`}
-      onViewDetails={scrollToEnd}
-      viewDetailsLabel="Ver detalle del total"
+      onViewDetails={step === 'catalog' ? onReview : scrollToEnd}
+      viewDetailsLabel={
+        step === 'catalog'
+          ? 'Revisar detalle de la venta'
+          : 'Ver detalle del total'
+      }
       bottomInset={bottomInset}
       cardBg={cardBg}
       borderColor={borderColor}
@@ -103,10 +121,15 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
         label: cta.label,
         accessibilityLabel: cta.accessibilityLabel,
         icon: cta.icon,
-        ready: isReadyToSubmit,
+        ready: step === 'catalog' || isReadyToSubmit,
         submitting,
-        disabled: cajaAbierta === false,
-        onPress: isReadyToSubmit
+        disabled: step === 'catalog' ? submitting : cajaAbierta === false,
+        onPress: step === 'catalog'
+          ? () => {
+              haptic.tap();
+              onReview?.();
+            }
+          : isReadyToSubmit
           ? () => {
               haptic.success();
               onSubmit();

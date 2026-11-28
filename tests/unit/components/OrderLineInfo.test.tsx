@@ -44,7 +44,7 @@ const item = (product: Product): CartItem => ({
 });
 
 describe('OrderLineInfo acompañamientos de botella', () => {
-  it('ignora los sabores con 0 unidades en la lista y en el total por botella', () => {
+  it('no repite los acompañamientos que se editan debajo del resumen', () => {
     render(
       <OrderLineInfo
         item={item(
@@ -58,13 +58,9 @@ describe('OrderLineInfo acompañamientos de botella', () => {
       />,
     );
 
-    expect(screen.getByText('Coca-Cola')).toBeTruthy();
-    expect(screen.getByText(/2 unidades por botella · total/)).toBeTruthy();
-    // El sabor sin unidades no aparece ni suma al encabezado del acompañamiento.
+    expect(screen.queryByText('Coca-Cola')).toBeNull();
     expect(screen.queryByText('Sprite')).toBeNull();
-    expect(screen.queryByText(/0 unidades por botella/)).toBeNull();
-    // El encabezado suma solo los sabores mostrados: 2, no 2 + 0.
-    expect(screen.getByText(/^Acompañamiento por botella \(2 unidades/)).toBeTruthy();
+    expect(screen.queryByText(/Acompañamiento por botella/)).toBeNull();
   });
 
   it('sin ningún sabor con unidades no muestra el bloque de acompañamiento', () => {

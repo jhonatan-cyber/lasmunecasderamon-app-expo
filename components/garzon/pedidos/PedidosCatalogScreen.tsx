@@ -190,6 +190,7 @@ export function PedidosCatalogScreen({ role }: PedidosCatalogScreenProps) {
         { id: 'new', label: 'Nuevo pedido' },
         { id: 'history', label: 'Mis pedidos' },
       ]}
+      tabsVariant="pills"
       activeTab={activeTab}
       onTabChange={(tab) => setActiveTab(tab as 'new' | 'history')}
       onBack={() => router.back()}

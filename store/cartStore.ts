@@ -13,6 +13,7 @@ import type {
   AcompanamientoBotellaItem,
   AcompanamientoCorto,
   CartItem,
+  MetodoPagoPedido,
   Product,
 } from "@/types/cart";
 import {
@@ -43,9 +44,15 @@ interface CartState {
   cart: CartItem[];
   tipEnabled: boolean;
   tipPercentage: number;
+  metodoPago: MetodoPagoPedido;
+  baucherFoto: string | null;
+  selectedClientId: string | null;
   /** Precio máximo de acompañamiento incluido; 0 desactiva la regla. */
   topeAcompanamiento: number;
   setTopeAcompanamiento: (tope: number) => void;
+  setMetodoPago: (metodo: MetodoPagoPedido) => void;
+  setBaucherFoto: (foto: string | null) => void;
+  setSelectedClientId: (clientId: string | null) => void;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateItemHostesses: (
@@ -72,6 +79,7 @@ interface CartState {
   clearCart: () => void;
   getTotal: () => number;
   getSubtotal: () => number;
+  getAcompanamientoRecargo: (tope?: number) => number;
   getTipAmount: () => number;
   buildOrderPayload: (params: BuildOrderParams) => BuildOrderResult;
 }
@@ -99,10 +107,16 @@ export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
   tipEnabled: false,
   tipPercentage: 10,
+  metodoPago: "efectivo",
+  baucherFoto: null,
+  selectedClientId: null,
   topeAcompanamiento: 0,
 
   setTopeAcompanamiento: (tope) =>
     set({ topeAcompanamiento: Number(tope) || 0 }),
+  setMetodoPago: (metodoPago) => set({ metodoPago }),
+  setBaucherFoto: (baucherFoto) => set({ baucherFoto }),
+  setSelectedClientId: (selectedClientId) => set({ selectedClientId }),
 
   addToCart: (product) => {
     set((state) => {
@@ -299,18 +313,32 @@ export const useCartStore = create<CartState>((set, get) => ({
         }));
       }),
     })),
-  clearCart: () => set({ cart: [], tipEnabled: false }),
+  clearCart: () =>
+    set({
+      cart: [],
+      tipEnabled: false,
+      metodoPago: "efectivo",
+      baucherFoto: null,
+      selectedClientId: null,
+    }),
 
   getSubtotal: () => {
-    const tope = get().topeAcompanamiento;
-    return get().cart.reduce((sum, item) => {
+    const state = get();
+    const productsSubtotal = state.cart.reduce(
+      (sum, item) => sum + item.product.price * item.quantity,
+      0,
+    );
+    return productsSubtotal + state.getAcompanamientoRecargo();
+  },
+
+  getAcompanamientoRecargo: (tope = get().topeAcompanamiento) =>
+    get().cart.reduce((sum, item) => {
       if (item.product.tipo_venta === "shot") {
         return (
           sum +
           shortMixersForItem(item).reduce(
             (unitSum, mixer) =>
               unitSum +
-              item.product.price +
               recargoAcompanamientoDeProducto(
                 { ...item.product, acompanamiento_corto: mixer },
                 tope,
@@ -321,12 +349,10 @@ export const useCartStore = create<CartState>((set, get) => ({
       }
       return (
         sum +
-        (item.product.price +
-          recargoAcompanamientoDeProducto(item.product, tope)) *
+        recargoAcompanamientoDeProducto(item.product, tope) *
           item.quantity
       );
-    }, 0);
-  },
+    }, 0),
 
   getTipAmount: () => {
     const subtotal = get().getSubtotal();

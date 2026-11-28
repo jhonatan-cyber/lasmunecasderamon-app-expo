@@ -37,6 +37,9 @@ describe("cartStore", () => {
       cart: [],
       tipEnabled: false,
       tipPercentage: 10,
+      metodoPago: "efectivo",
+      baucherFoto: null,
+      selectedClientId: null,
       topeAcompanamiento: 0,
     });
   });
@@ -183,10 +186,16 @@ describe("cartStore", () => {
   it("clearCart: debe vaciar el carrito y deshabilitar tip", () => {
     useCartStore.getState().addToCart(mockProduct as any);
     useCartStore.getState().setTipEnabled(true);
+    useCartStore.getState().setMetodoPago("transferencia");
+    useCartStore.getState().setBaucherFoto("data:image/jpeg;base64,abc");
+    useCartStore.getState().setSelectedClientId("client-1");
     useCartStore.getState().clearCart();
     const state = useCartStore.getState();
     expect(state.cart).toEqual([]);
     expect(state.tipEnabled).toBe(false);
+    expect(state.metodoPago).toBe("efectivo");
+    expect(state.baucherFoto).toBeNull();
+    expect(state.selectedClientId).toBeNull();
   });
 
   it("getSubtotal: debe calcular el subtotal correctamente", () => {
@@ -248,6 +257,8 @@ describe("cartStore", () => {
 
     // 15000 + (8000 - 5000) × 2; el acompañamiento bajo el tope no suma.
     expect(useCartStore.getState().getSubtotal()).toBe(21000);
+    expect(useCartStore.getState().getAcompanamientoRecargo()).toBe(6000);
+    expect(useCartStore.getState().getTotal()).toBe(21000);
   });
 
   it("getSubtotal: no suma nada sin tope configurado", () => {

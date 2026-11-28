@@ -113,7 +113,14 @@ describe("useGarzonProductos · pedido sin red", () => {
         username: "sebas",
       },
     });
-    useCartStore.setState({ cart: [], tipEnabled: false, tipPercentage: 10 });
+    useCartStore.setState({
+      cart: [],
+      tipEnabled: false,
+      tipPercentage: 10,
+      metodoPago: "efectivo",
+      baucherFoto: null,
+      selectedClientId: null,
+    });
 
     outbox.enqueueAndSend.mockReset();
     outbox.enqueueAndSend.mockResolvedValue(intentoPendiente);

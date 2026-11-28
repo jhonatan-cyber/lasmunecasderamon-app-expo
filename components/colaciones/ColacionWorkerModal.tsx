@@ -10,6 +10,7 @@ interface Worker {
   lastName: string;
   nick?: string;
   role?: string;
+  roleId?: string;
 }
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
   onSelect: (id: string) => void;
   /** Colaciones ya recibidas por trabajador en el turno. */
   receivedCounts?: Record<string, number>;
+  topesPorRol?: Record<string, number>;
   error?: string | null;
 }
 
@@ -37,6 +39,11 @@ const roleLabel = (role?: string): string | null => {
   return ROLE_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
 };
 
+const topePorRol = (roleId?: string, topesPorRol?: Record<string, number>): number => {
+  const tope = roleId ? topesPorRol?.[roleId] : undefined;
+  return typeof tope === 'number' && Number.isInteger(tope) && tope >= 0 ? tope : 1;
+};
+
 export const ColacionWorkerModal: React.FC<Props> = ({
   visible,
   onClose,
@@ -44,9 +51,13 @@ export const ColacionWorkerModal: React.FC<Props> = ({
   selectedId,
   onSelect,
   receivedCounts,
+  topesPorRol,
   error,
 }) => {
   const { accentColor, textPrimary, textSecondary, borderColor, cardBg, accentOnSurface } = useAccentColor();
+  const trabajadoresDisponibles = workers.filter((worker) =>
+    (receivedCounts?.[worker.id] ?? 0) < topePorRol(worker.roleId, topesPorRol)
+  );
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -54,17 +65,17 @@ export const ColacionWorkerModal: React.FC<Props> = ({
         <View style={[styles.card, { borderColor, backgroundColor: cardBg }]}>
           <Text style={[styles.title, { color: textPrimary }]}>Seleccionar trabajador</Text>
           <Text style={{ color: textSecondary, marginBottom: 8 }}>
-            Elige quién recibe el corto del turno.
+            Elige quién recibe la colación del turno.
           </Text>
           {error ? (
             <Text style={[styles.error, { color: accentOnSurface }]}>{error}</Text>
-          ) : workers.length === 0 ? (
+          ) : trabajadoresDisponibles.length === 0 ? (
             <Text style={{ color: textSecondary, textAlign: 'center' }}>
               No hay trabajadores disponibles.
             </Text>
           ) : (
             <FlatList
-              data={workers}
+              data={trabajadoresDisponibles}
               keyExtractor={(w) => w.id}
               style={{ flexShrink: 1 }}
               keyboardShouldPersistTaps="handled"
@@ -73,14 +84,15 @@ export const ColacionWorkerModal: React.FC<Props> = ({
               renderItem={({ item: w }) => {
                 const isSelected = w.id === selectedId;
                 const recibidas = receivedCounts?.[w.id] ?? 0;
-                const yaAtendido = recibidas > 0;
+                const tope = topePorRol(w.roleId, topesPorRol);
+                const progreso = recibidas > 0 ? `Recibió ${recibidas} de ${tope}` : null;
                 const rol = roleLabel(w.role);
                 return (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected, disabled: yaAtendido }}
+                    accessibilityState={{ selected: isSelected }}
                     accessibilityLabel={`${w.name} ${w.lastName}${rol ? `, ${rol}` : ''}${
-                      yaAtendido ? ', ya recibió colación' : ''
+                      progreso ? `, ${progreso}` : ''
                     }`}
                     onPress={() => {
                       onSelect(w.id);
@@ -90,23 +102,16 @@ export const ColacionWorkerModal: React.FC<Props> = ({
                       styles.row,
                       { backgroundColor: cardBg },
                       isSelected && { backgroundColor: accentColor + '18' },
-                      yaAtendido && styles.rowAttended,
                     ]}
                   >
                     <View style={styles.rowText}>
-                      <Text style={[
-                        styles.nameText,
-                        { color: textPrimary },
-                        yaAtendido && styles.nameTextAttended,
-                      ]}>
+                      <Text style={[styles.nameText, { color: textPrimary }]}>
                         {w.name} {w.lastName}
                         {w.nick ? ` · ${w.nick}` : ''}
                       </Text>
-                      {rol || yaAtendido ? (
+                      {rol || progreso ? (
                         <Text style={[styles.metaText, { color: textSecondary }]}>
-                          {[rol, yaAtendido ? `Ya recibió ${recibidas}` : null]
-                            .filter(Boolean)
-                            .join(' · ')}
+                          {[rol, progreso].filter(Boolean).join(' · ')}
                         </Text>
                       ) : null}
                     </View>
@@ -178,12 +183,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
-  },
-  rowAttended: {
-    opacity: 0.5,
-  },
-  nameTextAttended: {
-    textDecorationLine: 'line-through',
   },
   footer: {
     flexDirection: 'row',

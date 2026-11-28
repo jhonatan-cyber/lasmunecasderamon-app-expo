@@ -36,6 +36,7 @@ export interface PremiumHeaderProps {
     showAddButton?: boolean;
     onAdd?: () => void;
     tabs?: PremiumHeaderTab[];
+    tabsVariant?: 'segmented' | 'pills';
     activeTab?: string;
     onTabChange?: (tabId: string) => void;
     rightComponent?: React.ReactNode;
@@ -58,6 +59,7 @@ export function PremiumHeader({
     showAddButton = false,
     onAdd,
     tabs,
+    tabsVariant = 'segmented',
     activeTab,
     onTabChange,
     rightComponent,
@@ -272,10 +274,10 @@ export function PremiumHeader({
             </View>
 
             {tabs && tabs.length > 0 && (
-                <View style={[styles.tabContainer, {
-                    borderColor: gradientControlBorder,
-                    backgroundColor: gradientControlBg,
-                    height: compact ? 42 : isTablet ? 56 : 48,
+                <View style={[styles.tabContainer, tabsVariant === 'pills' && styles.pillTabContainer, {
+                    borderColor: tabsVariant === 'pills' ? 'transparent' : gradientControlBorder,
+                    backgroundColor: tabsVariant === 'pills' ? 'transparent' : gradientControlBg,
+                    height: compact ? (tabsVariant === 'pills' ? 44 : 42) : isTablet ? 56 : 48,
                     marginTop: compact ? 10 : 20,
                 }]}>
                     {tabs.map((tab) => {
@@ -286,7 +288,12 @@ export function PremiumHeader({
                                 accessibilityRole="tab"
                                 accessibilityLabel={tab.label}
                                 accessibilityState={{ selected: isActive }}
-                                style={[styles.tab, isActive && { backgroundColor: gradientActiveBg }]}
+                                style={[
+                                    styles.tab,
+                                    tabsVariant === 'pills' && styles.pillTab,
+                                    tabsVariant === 'pills' && !isActive && { backgroundColor: gradientControlBg },
+                                    isActive && { backgroundColor: gradientActiveBg },
+                                ]}
                                 onPress={() => {
                                     haptic.select();
                                     onTabChange && onTabChange(tab.id);
@@ -322,7 +329,9 @@ const styles = StyleSheet.create({
     plusBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: BorderRadius.full, gap: 4 },
     plusBtnText: { color: '#FFFFFF', fontFamily: FontFamily.semibold, fontSize: 14 },
     tabContainer: { flexDirection: 'row', marginTop: 20, borderRadius: BorderRadius.lg, padding: 4, borderWidth: 1 },
+    pillTabContainer: { borderWidth: 0, padding: 0, gap: 8 },
     tab: { flex: 1, height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: BorderRadius.md },
+    pillTab: { borderRadius: BorderRadius.full },
     tabText: { fontSize: 14, fontFamily: FontFamily.semibold },
 });
 

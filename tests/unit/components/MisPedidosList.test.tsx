@@ -75,8 +75,8 @@ vi.mock('@/components/ui/FilterTabs', () => ({
   ),
 }));
 vi.mock('@/components/ui/SearchBar', () => ({
-  SearchBar: ({ value, onChangeText, onClear }: any) => (
-    <div>
+  SearchBar: ({ value, onChangeText, onClear, compact }: any) => (
+    <div data-compact={compact ? 'true' : 'false'}>
       <input
         aria-label="Buscar pedidos"
         value={value}
@@ -96,7 +96,9 @@ vi.mock('@/components/ui/EmptyState', () => ({
     </div>
   ),
 }));
-vi.mock('@/components/garzon/pedidos/PedidosResumen', () => ({ PedidosResumen: () => null }));
+vi.mock('@/components/garzon/pedidos/PedidosResumen', () => ({
+  PedidosResumen: () => <div data-testid="pedidos-resumen">Resumen de pedidos</div>,
+}));
 vi.mock('@/components/garzon/pedidos/PedidoCard', () => ({
   PedidoCard: ({ pedido }: { pedido: { codigo: string } }) => (
     <div data-testid="pedido-card">{pedido.codigo}</div>
@@ -127,6 +129,13 @@ afterEach(() => {
 });
 
 describe('MisPedidosList orden inicial', () => {
+  it('omite las estadísticas y mantiene compacto el buscador', () => {
+    render(<MisPedidosList onNuevoPedido={() => {}} />);
+
+    expect(screen.queryByTestId('pedidos-resumen')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Buscar pedidos' }).parentElement?.getAttribute('data-compact')).toBe('true');
+  });
+
   it('muestra primero el pedido con la fecha más reciente', () => {
     render(<MisPedidosList onNuevoPedido={() => {}} />);
 

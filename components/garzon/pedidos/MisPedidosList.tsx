@@ -20,7 +20,6 @@ import { useMisPedidos, type Pedido } from '@/hooks/useMisPedidos';
 import { FontFamily } from '@/constants/fonts';
 import { BorderRadius } from '@/constants/spacing';
 import { parseDateSafe } from '@/utils/timeUtils';
-import { PedidosResumen } from './PedidosResumen';
 import { PedidoCard } from './PedidoCard';
 import { PedidoDetailModal } from './PedidoDetailModal';
 
@@ -140,6 +139,7 @@ export function MisPedidosList({ onNuevoPedido }: MisPedidosListProps) {
       <View style={styles.searchRow}>
         <View style={{ flex: 1 }}>
           <SearchBar
+            compact
             placeholder="Buscar por cliente, código o nicks..."
             value={search}
             onChangeText={setSearch}
@@ -232,11 +232,6 @@ export function MisPedidosList({ onNuevoPedido }: MisPedidosListProps) {
               onRefresh={onRefresh}
               tintColor={accentColor}
             />
-          }
-          ListHeaderComponent={
-            <View style={{ paddingBottom: 12 }}>
-              <PedidosResumen pedidos={pedidos} />
-            </View>
           }
           ListEmptyComponent={
             <EmptyState

@@ -41,6 +41,18 @@ describe('useCartExitGuard', () => {
     expect(result.current.discardPromptVisible).toBe(true);
   });
 
+  it('maneja un retroceso interno antes de mostrar el diálogo de descarte', () => {
+    const onStepBack = vi.fn(() => true);
+    const { result } = renderHook(() =>
+      useCartExitGuard({ enabled: true, onStepBack }),
+    );
+
+    act(() => preventRemove.callback?.({ repeat: vi.fn() }));
+
+    expect(onStepBack).toHaveBeenCalledOnce();
+    expect(result.current.discardPromptVisible).toBe(false);
+  });
+
   it('al confirmar limpia y repite la navegación bloqueada', () => {
     const onDiscard = vi.fn();
     const repeat = vi.fn();

@@ -53,8 +53,8 @@ vi.mock('@/hooks/useAccentColor', () => ({
 }));
 
 const trabajadores = [
-  { id: '1', name: 'Ana', lastName: 'Pérez', role: 'anfitriona' },
-  { id: '2', name: 'Bruno', lastName: 'Soto', nick: 'Bru', role: 'barman' },
+  { id: '1', name: 'Ana', lastName: 'Pérez', role: 'anfitriona', roleId: '10' },
+  { id: '2', name: 'Bruno', lastName: 'Soto', nick: 'Bru', role: 'barman', roleId: '20' },
 ];
 
 afterEach(cleanup);
@@ -69,11 +69,36 @@ describe('ColacionWorkerModal', () => {
         selectedId={null}
         onSelect={vi.fn()}
         receivedCounts={{ '2': 1 }}
+        topesPorRol={{ '20': 2 }}
       />,
     );
 
     expect(screen.getByText('Anfitriona')).toBeTruthy();
-    expect(screen.getByText('Barman · Ya recibió 1')).toBeTruthy();
+    expect(screen.getByText('Barman · Recibió 1 de 2')).toBeTruthy();
+  });
+
+  it('oculta trabajadores que alcanzaron el tope de su rol y conserva a quienes aún tienen cupo', () => {
+    render(
+      <ColacionWorkerModal
+        visible
+        onClose={vi.fn()}
+        workers={[
+          { id: '1', name: 'Ana', lastName: 'Pérez', role: 'anfitriona', roleId: '10' },
+          { id: '2', name: 'Bruno', lastName: 'Soto', role: 'barman', roleId: '20' },
+          { id: '3', name: 'Carla', lastName: 'Díaz', role: 'garzon', roleId: '30' },
+          { id: '4', name: 'Diego', lastName: 'Rojas', role: 'cajero', roleId: '40' },
+        ]}
+        selectedId={null}
+        onSelect={vi.fn()}
+        receivedCounts={{ '1': 1, '2': 1, '3': 1 }}
+        topesPorRol={{ '10': 2, '20': 1, '40': 0 }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Ana Pérez/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Bruno Soto/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Carla Díaz/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Diego Rojas/ })).toBeNull();
   });
 
   it('permite volver a elegir al trabajador seleccionado y cierra el modal', () => {

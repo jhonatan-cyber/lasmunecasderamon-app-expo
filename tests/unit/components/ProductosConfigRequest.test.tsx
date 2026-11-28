@@ -81,16 +81,23 @@ vi.mock("@/components/garzon/productos/GarzonProductConfigModal", () => ({
   GarzonProductConfigModal: ({
     visible,
     productId,
+    productIds,
     type,
     onClose,
   }: {
     visible: boolean;
     productId: string;
+    productIds?: string[];
     type: string;
     onClose: () => void;
   }) =>
     visible ? (
-      <div data-testid="config-modal" data-product-id={productId} data-type={type}>
+      <div
+        data-testid="config-modal"
+        data-product-id={productId}
+        data-product-ids={productIds?.join(",")}
+        data-type={type}
+      >
         <button type="button" onClick={onClose}>Cerrar selección</button>
       </div>
     ) : null,
@@ -177,6 +184,20 @@ describe("ProductosScreen solicitud de configuración", () => {
       configureProductId: undefined,
       configureType: undefined,
     });
+  });
+
+  it("agrupa todas las modalidades del producto al seleccionar habitación", () => {
+    routeParams.configureType = "room";
+    hookResult.products = [
+      { ...item.product, tipo_venta: "botella" },
+      { ...item.product, id: "shot-a", tipo_venta: "shot" },
+    ];
+
+    render(<ProductosScreen />);
+
+    expect(screen.getByTestId("config-modal").getAttribute("data-product-ids")).toBe(
+      "bottle-a,shot-a",
+    );
   });
 
   it("permite asociar un cliente desde el catálogo de productos", () => {

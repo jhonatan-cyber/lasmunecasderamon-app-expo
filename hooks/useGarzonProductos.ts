@@ -1,28 +1,23 @@
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import { showToast } from "@/utils/toast-lazy";
 import { apiClientSafe } from "@/api/client";
-import { useConfigValue } from "@/hooks/useConfigValue";
-import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { mapForSaleProduct } from "@/hooks/utils/cartUtils";
 import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
 import { esCortoAnfitriona } from "@/hooks/utils/hostessShortPrices";
 import { getHostessLimit } from "@/hooks/utils/cuentaUtils";
+import { useGarzonOrderCheckout } from "@/hooks/useGarzonOrderCheckout";
 import type {
   CartItem,
   Product,
   Anfitriona,
   Room,
-  MetodoPagoPedido,
 } from "@/types/cart";
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
-import { getOutbox } from "@/services/outbox";
 import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
-import { useBaucherPhoto } from "@/hooks/useBaucherPhoto";
-import { generateCode } from "@/components/cajero/nuevo-servicio/helpers";
 
 export interface Client {
   id: string;
@@ -34,45 +29,33 @@ export interface Client {
 }
 
 export function useGarzonProductos() {
-  const router = useRouter();
+  const {
+    metodoPago,
+    setMetodoPago,
+    baucherFoto,
+    baucherPromptVisible,
+    setBaucherPromptVisible,
+    takeBaucherPhoto,
+    submitting,
+    submitOrder,
+    propinaPct,
+  } = useGarzonOrderCheckout();
   const { categoryId, categoryName } = useLocalSearchParams<{
     categoryId: string;
     categoryName: string;
   }>();
-  const user = useAuthStore((state) => state.user);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [metodoPago, setMetodoPagoRaw] = useState<MetodoPagoPedido>("efectivo");
-  const [baucherPromptVisible, setBaucherPromptVisible] = useState(false);
-  // El aviso se muestra una sola vez por pedido: si el garzón lo descarta,
-  // no se repite al volver a elegir "transferencia".
-  const baucherPromptShown = useRef(false);
+  const selectedClientId = useCartStore((state) => state.selectedClientId);
+  const setSelectedClientId = useCartStore((state) => state.setSelectedClientId);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const [fromCache, setFromCache] = useState(false);
   const dataRef = useRef<string>("");
-  const submitInFlight = useRef(false);
-
-  const { baucherFoto, setBaucherFoto, takeBaucherPhoto } = useBaucherPhoto("Productos");
-
-  const setMetodoPago = useCallback(
-    (metodo: MetodoPagoPedido) => {
-      setMetodoPagoRaw(metodo);
-      // La cámara no se abre sola: primero se avisa con el modal de la app,
-      // y solo la primera vez por pedido.
-      if (metodo === "transferencia" && !baucherFoto && !baucherPromptShown.current) {
-        baucherPromptShown.current = true;
-        setBaucherPromptVisible(true);
-      }
-    },
-    [baucherFoto],
-  );
 
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [clearCartAlertVisible, setClearCartAlertVisible] = useState(false);
@@ -89,28 +72,10 @@ export function useGarzonProductos() {
     updateItemRoom,
     tipEnabled,
     setTipEnabled,
-    setTipPercentage,
-    setTopeAcompanamiento,
     clearCart,
     getTipAmount,
     getTotal,
-    buildOrderPayload,
   } = useCartStore();
-
-  const propinaPct = Number(
-    useConfigValue("facturacion", "propina_venta", "10"),
-  );
-  const topeAcompanamiento = Number(
-    useConfigValue("comisiones", "tope_precio_acompañamiento", "0"),
-  );
-
-  useEffect(() => {
-    setTipPercentage(propinaPct);
-  }, [propinaPct, setTipPercentage]);
-
-  useEffect(() => {
-    setTopeAcompanamiento(topeAcompanamiento);
-  }, [topeAcompanamiento, setTopeAcompanamiento]);
 
 
   const readThroughMirror = useCallback(
@@ -303,110 +268,6 @@ export function useGarzonProductos() {
     if (item.product.tipo_venta === "shot")
       return item.product.shot_anfitriona ? item.quantity : 0;
     return getHostessLimit(item.product, item.quantity);
-  };
-
-  const submitOrder = async () => {
-    if (submitInFlight.current) return;
-    if (cart.length === 0) return;
-    if (!user) return;
-
-    for (const item of cart) {
-      const hasCommission = (item.product.commission || 0) > 0;
-      if (hasCommission && item.selectedHostesses.length === 0) {
-        showToast({
-          type: "error",
-          text1: "Falta Anfitriona",
-          text2: `Debes asignar al menos una anfitriona a "${item.product.name}"`,
-        });
-        return;
-      }
-    }
-
-    if (metodoPago === "transferencia" && !baucherFoto) {
-      setBaucherPromptVisible(true);
-      return;
-    }
-
-    submitInFlight.current = true;
-    setSubmitting(true);
-    try {
-      const codigo = generateCode();
-
-      const buildResult = buildOrderPayload({
-        meseroId: user.id,
-        codigo,
-        clienteId: selectedClientId,
-        metodoPago,
-        baucherFoto: metodoPago === "transferencia" ? baucherFoto : null,
-        device_date: new Date().toISOString(),
-      });
-
-      if (!buildResult.success) {
-
-        const problemaDeBaucher = buildResult.errors.some((error) =>
-          error.includes("baucher_foto"),
-        );
-        showToast({
-          type: "error",
-          text1: problemaDeBaucher ? "La foto del baucher no sirve" : "Datos inválidos",
-          text2: problemaDeBaucher
-            ? "Supera el tamaño permitido. Vuelve a tomarla y el pedido se envía sin problema."
-            : buildResult.errors.join("; "),
-        });
-        if (problemaDeBaucher && metodoPago === "transferencia") void takeBaucherPhoto();
-        setSubmitting(false);
-        return;
-      }
-
-      const orderData = buildResult.data;
-
-      logger.debug("[DEBUG] Enviando pedido", { orderData });
-
-      const intent = await getOutbox().enqueueAndSend({
-        type: "order.create",
-        payload: orderData,
-        label: `Pedido ${codigo} · ${cart.reduce((acc, item) => acc + item.quantity, 0)} ítem(s)`,
-      });
-
-      if (intent.status === "aplicada") {
-        showToast({
-          type: "success",
-          text1: "Pedido Enviado",
-          text2: "El pedido ha sido registrado correctamente",
-        });
-        clearCart();
-        setMetodoPagoRaw("efectivo");
-        setBaucherFoto(null);
-        baucherPromptShown.current = false;
-        router.back();
-        return;
-      }
-
-      if (intent.status === "fallida") {
-        throw new Error(intent.lastError || "El servidor rechazó el pedido");
-      }
-
-      showToast({
-        type: "info",
-        text1: "Pedido guardado en el dispositivo",
-        text2: "Se enviará automáticamente cuando vuelva la conexión",
-        visibilityTime: 4000,
-      });
-      clearCart();
-      setMetodoPagoRaw("efectivo");
-      setBaucherFoto(null);
-      baucherPromptShown.current = false;
-      router.back();
-    } catch (err: any) {
-      showToast({
-        type: "error",
-        text1: "Error",
-        text2: err.message || "Error de conexión",
-      });
-    } finally {
-      submitInFlight.current = false;
-      setSubmitting(false);
-    }
   };
 
   return {

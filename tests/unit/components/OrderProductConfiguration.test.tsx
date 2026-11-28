@@ -17,10 +17,12 @@ vi.mock("react-native", () => ({
   ScrollView: ({ children }: any) => <div>{children}</div>,
   Modal: ({ children, visible }: any) =>
     visible ? <div role="dialog">{children}</div> : null,
-  Pressable: ({ children, onPress, accessibilityLabel, disabled }: any) => (
+  Pressable: ({ children, onPress, accessibilityLabel, accessibilityState, disabled }: any) => (
     <button
       onClick={onPress}
       aria-label={accessibilityLabel}
+      aria-pressed={accessibilityState?.selected}
+      aria-expanded={accessibilityState?.expanded}
       disabled={disabled}
     >
       {children}
@@ -41,7 +43,9 @@ vi.mock("react-native", () => ({
   Platform: { OS: "web" },
   KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
 }));
-vi.mock("@expo/vector-icons/Ionicons", () => ({ default: () => <span /> }));
+vi.mock("@expo/vector-icons/Ionicons", () => ({
+  default: ({ name }: { name: string }) => <span data-icon={name} />,
+}));
 vi.mock("@/hooks/useAccentColor", () => ({
   useAccentColor: () => ({
     accentColor: "#123",
@@ -182,7 +186,53 @@ describe("Configuración de producto en Expo", () => {
     ]);
   });
 
-  it("permite elegir la modalidad dentro de la tarjeta unificada", () => {
+  it("mantiene plegadas las modalidades hasta expandir la tarjeta", () => {
+    useCartStore.setState({ cart: [] });
+    const bottle = {
+      ...product,
+      id: "vodka:botella",
+      name: "Vodka Botella",
+      tipo_venta: "botella" as const,
+      shot_anfitriona: false,
+      commission: 0,
+      price: 30000,
+    };
+    render(
+      <ProductCard
+        product={product}
+        saleVariants={[product, bottle]}
+        onAdd={vi.fn()}
+        onRemove={vi.fn()}
+        onConfigPress={vi.fn()}
+        anfitrionas={[]}
+        rooms={[]}
+      />,
+    );
+
+    const expandButton = screen.getByRole("button", {
+      name: `Expandir opciones de venta de ${product.name}`,
+    });
+    expect(expandButton.getAttribute("aria-expanded")).toBe("false");
+    expect(
+      screen.queryByRole("button", { name: "Abrir Botella sola · $20.000" }),
+    ).toBeNull();
+
+    fireEvent.click(expandButton);
+
+    const collapseButton = screen.getByRole("button", {
+      name: `Contraer opciones de venta de ${product.name}`,
+    });
+    expect(collapseButton.getAttribute("aria-expanded")).toBe("true");
+    expect(
+      screen.getByRole("button", { name: "Abrir Botella sola · $30.000" }),
+    ).toBeTruthy();
+    fireEvent.click(collapseButton);
+    expect(
+      screen.queryByRole("button", { name: "Abrir Botella sola · $30.000" }),
+    ).toBeNull();
+  });
+
+  it("abre la modalidad elegida sin un botón general ni un selector duplicado", () => {
     useCartStore.setState({ cart: [] });
     const bottle = {
       ...product,
@@ -191,55 +241,139 @@ describe("Configuración de producto en Expo", () => {
       tipo_venta: "botella" as const,
       shot_anfitriona: false,
       price: 30000,
-      commission: 0,
+      commission: 3000,
+      stock_bar: 1,
     };
-    const onAdd = vi.fn();
+    const onConfigPress = vi.fn();
 
     render(
       <ProductCard
         product={product}
         saleVariants={[product, bottle]}
-        onAdd={onAdd}
-        onRemove={vi.fn()}
-        onConfigPress={vi.fn()}
+        onAdd={useCartStore.getState().addToCart}
+        onRemove={useCartStore.getState().removeFromCart}
+        onConfigPress={onConfigPress}
         anfitrionas={[]}
         rooms={[]}
-        layout="grid"
+        layout="list"
       />,
     );
 
+    expect(
+      screen.queryByRole("button", { name: `Configurar ${product.name}` }),
+    ).toBeNull();
     fireEvent.click(
-      screen.getByRole("button", { name: `Configurar ${product.name}` }),
-    );
-    expect(screen.getByText("Modalidad de venta")).toBeTruthy();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Seleccionar Botella sola" }),
+      screen.getByRole("button", {
+        name: `Expandir opciones de venta de ${product.name}`,
+      }),
     );
     fireEvent.click(
-      screen.getByRole("button", { name: `Aumentar ${bottle.name}` }),
+      screen.getByRole("button", { name: "Abrir Botella con anfitriona · $30.000" }),
     );
+    expect(useCartStore.getState().cart).toHaveLength(0);
+    expect(screen.queryByText("Modalidad de venta")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Elegir Botella con anfitriona/ }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: `Aumentar ${bottle.name}` }));
+    expect(screen.getByRole("button", { name: "Seleccionar anfitriona(s) (máx 1)" })).toBeTruthy();
+    expect(screen.queryByText("Seleccionar habitación")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Agregar 1 al pedido" }));
+    expect(useCartStore.getState().cart).toHaveLength(1);
+    expect(useCartStore.getState().cart[0].product.id).toBe(bottle.id);
 
-    expect(onAdd).toHaveBeenCalledWith(bottle);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Abrir Corto anfitriona · $20.000" }),
+    );
+    expect(screen.queryByText("Modalidad de venta")).toBeNull();
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByRole("button", { name: `Aumentar ${product.name}` })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: `Aumentar ${product.name}` }));
+    expect(screen.getByRole("button", { name: /Soda o gaseosa para Vodka/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Seleccionar anfitriona(s) (máx 1)" }));
+    expect(onConfigPress).toHaveBeenCalledWith(product.id, "hostess");
   });
 
-  it("muestra el precio y el tipo de venta en un badge", () => {
-    useCartStore.setState({ cart: [] });
+  it.each(["grid", "list"] as const)(
+    "abre directamente el modal y muestra la tarjeta sin flecha en layout %s",
+    (layout) => {
+      useCartStore.setState({ cart: [] });
+      const { container } = render(
+        <ProductCard
+          product={product}
+          onAdd={vi.fn()}
+          onRemove={vi.fn()}
+          onConfigPress={vi.fn()}
+          anfitrionas={[]}
+          rooms={[]}
+          layout={layout}
+        />,
+      );
+
+      const productButton = screen.getByRole("button", {
+        name: `Configurar ${product.name}`,
+      });
+      expect(productButton.querySelector('[data-icon="chevron-forward"]')).toBeNull();
+      expect(productButton.contains(screen.getByText("Licores"))).toBe(true);
+      expect(productButton.contains(screen.getByText("750 ml"))).toBe(true);
+      expect(container.querySelector('[data-icon="chevron-forward"]')).toBeNull();
+      fireEvent.click(productButton);
+      expect(screen.getByRole("dialog")).toBeTruthy();
+      expect(screen.queryByText("Modalidad de venta")).toBeNull();
+      expect(screen.getByText("$20.000")).toBeTruthy();
+      expect(screen.getByText("Corto anfitriona")).toBeTruthy();
+      expect(screen.queryByText("TRAGO")).toBeNull();
+    },
+  );
+
+  it("limita la cantidad de botella al stock compartido entre modalidades", () => {
+    const bottle = {
+      ...product,
+      id: "vodka:botella",
+      name: "Vodka Botella",
+      tipo_venta: "botella" as const,
+      commission: 0,
+      stock_bar: 1,
+    };
+    const anotherBottle = {
+      ...bottle,
+      id: "vodka:botella-en-pedido",
+      name: "Vodka Botella en pedido",
+    };
+    useCartStore.setState({
+      cart: [
+        {
+          product: anotherBottle,
+          quantity: 1,
+          selectedHostesses: [],
+          selectedRoom: null,
+        },
+      ],
+    });
+
     render(
       <ProductCard
         product={product}
-        onAdd={vi.fn()}
-        onRemove={vi.fn()}
+        saleVariants={[product, bottle]}
+        onAdd={useCartStore.getState().addToCart}
+        onRemove={useCartStore.getState().removeFromCart}
         onConfigPress={vi.fn()}
         anfitrionas={[]}
         rooms={[]}
-        layout="grid"
       />,
     );
 
-    expect(screen.getByText("$20.000")).toBeTruthy();
-    expect(screen.getByText("Corto anfitriona")).toBeTruthy();
-    expect(screen.queryByText("TRAGO")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Expandir opciones de venta de ${product.name}`,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Abrir Botella sola · $20.000" }));
+
+    expect(
+      screen.getByRole("button", { name: `Aumentar ${bottle.name}` }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(useCartStore.getState().cart).toHaveLength(1);
   });
 
   it("permite elegir una bebida distinta para cada corto y muestra foto y stock", async () => {
@@ -525,11 +659,6 @@ describe("Configuración de producto en Expo", () => {
       trigger: "Cambiar anfitrionas (máx 1)",
       title: "Asignar Anfitrionas (Máx 1)",
     },
-    {
-      type: "room" as const,
-      trigger: "Cambiar habitación",
-      title: "Seleccionar Habitación",
-    },
   ])("abre el selector de $type sobre el modal de producto", ({ type, trigger, title }) => {
     const bottle = {
       ...product,
@@ -660,10 +789,17 @@ describe("Configuración de producto en Expo", () => {
   });
 
   it("permite seleccionar y deseleccionar una habitación antes de cerrar", () => {
+    const bottle = { ...product, id: "vodka:bottle", tipo_venta: "botella" as const };
     useCartStore.setState({
       cart: [
         {
           product,
+          quantity: 1,
+          selectedHostesses: [],
+          selectedRoom: null,
+        },
+        {
+          product: bottle,
           quantity: 1,
           selectedHostesses: [],
           selectedRoom: null,
@@ -676,6 +812,7 @@ describe("Configuración de producto en Expo", () => {
       <GarzonProductConfigModal
         visible
         productId={product.id}
+        productIds={[product.id, bottle.id]}
         type="room"
         hostesses={[]}
         rooms={[{ id: "room-1", name: "VIP 1" }]}
@@ -687,9 +824,15 @@ describe("Configuración de producto en Expo", () => {
 
     const room = screen.getByRole("button", { name: "VIP 1" });
     fireEvent.click(room);
-    expect(useCartStore.getState().cart[0].selectedRoom).toBe("room-1");
+    expect(useCartStore.getState().cart.map((item) => item.selectedRoom)).toEqual([
+      "room-1",
+      "room-1",
+    ]);
     fireEvent.click(room);
-    expect(useCartStore.getState().cart[0].selectedRoom).toBeNull();
+    expect(useCartStore.getState().cart.map((item) => item.selectedRoom)).toEqual([
+      null,
+      null,
+    ]);
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -755,7 +898,7 @@ describe("Configuración de producto en Expo", () => {
     ).toMatchObject([{ presentacion_id: "fanta", unidades: 4 }]);
   });
 
-  it("activa el selector de habitación al subir el contador desde cero", () => {
+  it("deja la habitación para el detalle del pedido, no para agregar la línea", () => {
     useCartStore.setState({ cart: [] });
     const onConfigPress = vi.fn();
     const botella = {
@@ -783,21 +926,16 @@ describe("Configuración de producto en Expo", () => {
       screen.getByRole("button", { name: `Configurar ${botella.name}` }),
     );
 
-    const selectorHabitacion = screen
-      .getByText("Seleccionar habitación")
-      .closest("button");
-    expect(selectorHabitacion?.hasAttribute("disabled")).toBe(true);
+    expect(screen.queryByText("Seleccionar habitación")).toBeNull();
 
     fireEvent.click(
       screen.getByRole("button", {
         name: `Aumentar ${botella.name}`,
       }),
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Seleccionar habitación" }),
-    );
-
-    expect(onConfigPress).toHaveBeenCalledWith(botella.id, "room");
+    fireEvent.click(screen.getByRole("button", { name: "Agregar 1 al pedido" }));
+    expect(screen.queryByText("Seleccionar habitación")).toBeNull();
+    expect(onConfigPress).not.toHaveBeenCalledWith(botella.id, "room");
     expect(useCartStore.getState().cart[0].quantity).toBe(1);
   });
 

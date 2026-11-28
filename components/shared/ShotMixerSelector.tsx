@@ -68,10 +68,12 @@ export function ShotMixerSelector({
   bottle = false,
   compact = false,
   disabled = false,
+  label,
 }: {
   compact?: boolean;
   bottle?: boolean;
   disabled?: boolean;
+  label?: string;
   items: MixerSourceItem[];
   onChange?: (index: number, mixer: ShortMixer) => void;
   onChangeBottle?: (index: number, sabores: AcompanamientoBotellaItem[]) => void;
@@ -233,11 +235,9 @@ export function ShotMixerSelector({
         gap: 12,
       }}
     >
-      {!compact && (
-        <Text style={{ color: textPrimary, fontFamily: FontFamily.bold }}>
-          {bottle
-            ? "Bebidas"
-            : "Bebida para los cortos"}
+      {(label || !compact) && (
+        <Text style={{ color: textPrimary, fontFamily: FontFamily.semibold }}>
+          {label ?? (bottle ? "Bebidas" : "Bebida para los cortos")}
         </Text>
       )}
       {loading && <ActivityIndicator color={accentColor} />}
@@ -283,26 +283,29 @@ export function ShotMixerSelector({
           >
             {bottle ? (
               <>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Agregar sabor para ${item.nombre}`}
-                  disabled={disabled || loading || restante < botellas}
-                  onPress={() => {
-                    if (disabled) return;
-                    setSearch("");
-                    setSelected(index);
-                  }}
-                  style={{
-                    padding: 12,
-                    borderColor,
-                    borderWidth: 1,
-                    borderRadius: BorderRadius.full,
-                    opacity:
-                      disabled || loading || restante < botellas ? 0.5 : 1,
-                  }}
-                >
-                  <Text style={{ color: textPrimary }}>Seleccionar bebida</Text>
-                </Pressable>
+                {restante >= botellas && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Agregar sabor para ${item.nombre}`}
+                    disabled={disabled || loading}
+                    onPress={() => {
+                      if (disabled) return;
+                      setSearch("");
+                      setSelected(index);
+                    }}
+                    style={{
+                      minHeight: 44,
+                      justifyContent: "center",
+                      padding: 12,
+                      borderColor,
+                      borderWidth: 1,
+                      borderRadius: BorderRadius.full,
+                      opacity: disabled || loading ? 0.5 : 1,
+                    }}
+                  >
+                    <Text style={{ color: textPrimary }}>Seleccionar bebida</Text>
+                  </Pressable>
+                )}
                 {sabores.map((sabor) => {
                   const max = maxFor(sabor);
                   return (

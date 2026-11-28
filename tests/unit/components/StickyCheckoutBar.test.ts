@@ -4,9 +4,17 @@ import { resolveCheckoutCta } from '@/components/cajero/nueva-venta/StickyChecko
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
 
 describe('resolveCheckoutCta — el CTA dice qué falta', () => {
-  it('cobra cuando la venta está lista', () => {
-    expect(resolveCheckoutCta(true, null)).toEqual({
-      label: 'Cobrar',
+  it('permite revisar la venta antes de cobrar', () => {
+    expect(resolveCheckoutCta(false, 'payment', 'catalog')).toEqual({
+      label: 'Revisar venta',
+      accessibilityLabel: 'Revisar productos y detalles de la venta',
+      icon: 'receipt-outline',
+    });
+  });
+
+  it('genera la venta cuando está lista', () => {
+    expect(resolveCheckoutCta(true, null, 'review')).toEqual({
+      label: 'Generar venta',
       accessibilityLabel: 'Finalizar venta',
       icon: 'checkmark-circle',
     });

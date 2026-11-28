@@ -20,6 +20,7 @@ export interface ReglaColacionResponse {
   categoriaBebidasAnalcoholicas: string;
   catalogos: Record<CatalogoColacion, DefinicionCatalogoColacion>;
   roles: Record<string, ReglaColacion>;
+  topesPorRol?: Record<string, number>;
 }
 
 /** Regla compartida de colación servida por el dashboard. La app no repite el
@@ -115,16 +116,21 @@ export function acompanamientosDeColacion(
   return catalogo
     .filter((bebida) => String(bebida.presentacion_id) !== String(producto.presentacion_id))
     .filter((bebida) => Number(bebida.stock_bar ?? bebida.stock ?? 0) >= unidadesRequeridas)
-    .map((bebida) => ({
-      id: Number(bebida.presentacion_id),
-      nombre: `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim(),
-      presentacion_id: Number(bebida.presentacion_id),
-      presentacion_nombre: bebida.presentacion_nombre,
-      ml: Number(bebida.ml_abierta ?? 0),
-      cantidad: unidadesRequeridas,
-      stock: Number(bebida.stock_bar ?? bebida.stock ?? 0),
-      disponible: true,
-    }));
+    .map((bebida) => {
+      const stock = Math.max(0, Number(bebida.stock_bar ?? bebida.stock ?? 0) || 0);
+      const mlAbierta = Math.max(0, Number(bebida.ml_abierta ?? 0) || 0);
+      return {
+        id: Number(bebida.presentacion_id),
+        nombre: `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim(),
+        presentacion_id: Number(bebida.presentacion_id),
+        presentacion_nombre: bebida.presentacion_nombre,
+        producto_foto: bebida.producto_foto,
+        ml: mlAbierta,
+        cantidad: unidadesRequeridas,
+        stock,
+        disponible: true,
+      };
+    });
 }
 
 export interface ColacionProducto {
@@ -175,6 +181,7 @@ export interface AcompanamientoOpcion {
   nombre: string;
   presentacion_id: number;
   presentacion_nombre: string;
+  producto_foto?: string | null;
   ml: number;
   cantidad?: number;
   cantidad_servir?: number;

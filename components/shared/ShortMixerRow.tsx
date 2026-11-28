@@ -43,6 +43,8 @@ export const ShortMixerRow: React.FC<ShortMixerRowProps> = ({
         disabled={disabled || loading}
         onPress={onPress}
         style={{
+          minHeight: 44,
+          justifyContent: 'center',
           padding: 12,
           borderColor,
           borderWidth: 1,

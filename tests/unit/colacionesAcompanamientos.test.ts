@@ -27,6 +27,7 @@ function bebida(
 describe('acompanamientos de colación', () => {
   it('ofrece el catálogo de analcohólicas sin la bebida elegida', () => {
     const sprite = bebida(2, 'Sprite', '1.5 L', 10);
+    sprite.producto_foto = 'sprite.png';
     const cola = bebida(3, 'Coca-Cola', '1.5 L', 4);
     const producto = bebida(1, 'Vodka', '750 ml', 0);
 
@@ -36,10 +37,12 @@ describe('acompanamientos de colación', () => {
     expect(opciones[0]).toMatchObject({
       nombre: 'Sprite 1.5 L',
       presentacion_nombre: '1.5 L',
+      producto_foto: 'sprite.png',
       ml: 1200,
       stock: 10,
       cantidad: 1,
     });
+    expect(opciones[0]).not.toHaveProperty('mlDisponibles');
   });
 
   it('exige stock de bar suficiente para las unidades configuradas', () => {

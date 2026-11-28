@@ -11,6 +11,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 interface GarzonProductConfigModalProps {
   visible: boolean;
   productId: string;
+  productIds?: string[];
   type: "hostess" | "room";
   hostesses: Anfitriona[];
   rooms: Room[];
@@ -22,6 +23,7 @@ interface GarzonProductConfigModalProps {
 export const GarzonProductConfigModal: React.FC<GarzonProductConfigModalProps> = ({
   visible,
   productId,
+  productIds,
   type,
   hostesses,
   rooms,
@@ -31,9 +33,16 @@ export const GarzonProductConfigModal: React.FC<GarzonProductConfigModalProps> =
 }) => {
   const { accentColor, accentOnSurface, borderColor, cardBg, textPrimary } =
     useAccentColor();
-  const currentConfigItem = useCartStore((state) =>
-    state.cart.find((item) => item.product.id === productId),
+  const configuredProductIds = productIds?.length ? productIds : [productId];
+  const cart = useCartStore((state) => state.cart);
+  const currentConfigItems = cart.filter((item) =>
+    configuredProductIds.includes(item.product.id),
   );
+  const currentConfigItem =
+    currentConfigItems.find((item) => item.product.id === productId) ??
+    currentConfigItems[0];
+  const currentRoom =
+    currentConfigItems.find((item) => item.selectedRoom)?.selectedRoom ?? null;
 
   const toggleHostess = (id: string) => {
     const current =
@@ -64,14 +73,18 @@ export const GarzonProductConfigModal: React.FC<GarzonProductConfigModalProps> =
   };
 
   const selectRoom = (roomId: string | null) => {
-    const currentRoom =
-      useCartStore
-        .getState()
-        .cart.find((item) => item.product.id === productId)?.selectedRoom ??
-      null;
-    useCartStore
-      .getState()
-      .updateItemRoom(productId, currentRoom === roomId ? null : roomId);
+    const state = useCartStore.getState();
+    const selectedRoom =
+      state.cart.find(
+        (item) =>
+          configuredProductIds.includes(item.product.id) && item.selectedRoom,
+      )?.selectedRoom ?? null;
+    const nextRoom = selectedRoom === roomId ? null : roomId;
+    for (const id of configuredProductIds) {
+      if (state.cart.some((item) => item.product.id === id)) {
+        state.updateItemRoom(id, nextRoom);
+      }
+    }
   };
 
   if (!visible) return null;
@@ -146,24 +159,24 @@ export const GarzonProductConfigModal: React.FC<GarzonProductConfigModalProps> =
                 style={[
                   styles.modalItem,
                   {
-                    borderColor: !currentConfigItem?.selectedRoom
+                    borderColor: !currentRoom
                       ? accentColor
                       : borderColor,
-                    backgroundColor: !currentConfigItem?.selectedRoom
+                    backgroundColor: !currentRoom
                       ? `${accentColor}15`
                       : "transparent",
                   },
                 ]}
                 accessibilityRole="radio"
                 accessibilityLabel="Sin habitación"
-                accessibilityState={{ selected: !currentConfigItem?.selectedRoom }}
+                accessibilityState={{ selected: !currentRoom }}
               >
                 <Text style={[styles.modalItemText, { color: textPrimary }]}>
                   Sin Habitación
                 </Text>
               </Pressable>
               {rooms.map((room) => {
-                const isSelected = currentConfigItem?.selectedRoom === room.id;
+                const isSelected = currentRoom === room.id;
                 return (
                   <Pressable
                     key={room.id}

@@ -6,6 +6,8 @@ interface CartExitGuardOptions {
   enabled: boolean;
   /** Limpieza que solo debe ejecutarse si el usuario confirma el descarte. */
   onDiscard?: () => void;
+  /** Maneja un retroceso interno antes de abandonar la pantalla. */
+  onStepBack?: () => boolean;
 }
 
 /**
@@ -16,10 +18,11 @@ interface CartExitGuardOptions {
  * botón del header, el gesto de iOS y el back físico de Android por igual. El
  * botón del header solo debe llamar a `router.back()`.
  */
-export function useCartExitGuard({ enabled, onDiscard }: CartExitGuardOptions) {
+export function useCartExitGuard({ enabled, onDiscard, onStepBack }: CartExitGuardOptions) {
   const [pendingExit, setPendingExit] = useState<(() => void) | null>(null);
 
   usePreventRemove(enabled, ({ repeat }) => {
+    if (onStepBack?.()) return;
     // `repeat` vuelve a despachar la navegación bloqueada sin esperar a que el
     // estado de React se vuelva a pintar.
     setPendingExit(() => repeat);
